@@ -1,13 +1,8 @@
 use std::ffi::CStr;
-use bindings::{vhpi_handle, vhpi_get_str, vhpi_get};
+use bindings::{vhpi_get_str, vhpi_get};
 use num_derive::FromPrimitive;
 
 use crate::Handle;
-
-#[repr(u32)]
-pub enum OneToOne {
-    RootInst = bindings::vhpiOneToOneT_vhpiRootInst,
-}
 
 #[repr(u32)]
 pub enum StrProperty {
@@ -51,10 +46,6 @@ impl Handle {
                 .ok()
                 .map(|s| s.to_owned())
         }
-    }
-
-    pub fn handle(&self, property: OneToOne) -> Handle {
-        Handle::from_raw(unsafe { vhpi_handle(property as u32, self.as_raw()) })
     }
 
     // The following are convenience functions not defined by VHPI

@@ -14,6 +14,6 @@ use std::ffi::CString;
 extern crate num_derive;
 
 pub fn printf(msg: &str) {
-    let cstr = CString::new(msg).expect("CString::new failed");
+    let cstr = CString::new(msg).unwrap();
     unsafe { bindings::vhpi_printf(cstr.as_ptr()) };
 }

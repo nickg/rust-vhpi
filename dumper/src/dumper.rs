@@ -6,6 +6,10 @@ fn start_of_sim() {
 
     println!("root name is {}", root.get_name());
     println!("root kind is {:?}", root.get_kind());
+
+    for sig in root.iterator(vhpi::OneToMany::SigDecls) {
+        println!("signal {}", sig.get_name());
+    }
 }
 
 fn next_time_step() {
