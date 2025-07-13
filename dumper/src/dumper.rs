@@ -2,19 +2,32 @@ fn value_change(_data: &vhpi::CbData) {
     vhpi::printf("value change");
 }
 
+fn walk_region(region: &vhpi::Handle) {
+    for port in region.iterator(vhpi::OneToMany::PortDecls) {
+        println!("port {}", port.get_name());
+        port.register_cb(vhpi::CbReason::ValueChange, value_change);
+    }
+
+    for sig in region.iterator(vhpi::OneToMany::SigDecls) {
+        println!("signal {}", sig.get_name());
+        sig.register_cb(vhpi::CbReason::ValueChange, value_change);
+    }
+
+    for sub in region.iterator(vhpi::OneToMany::InternalRegions) {
+        println!("internal region {}", sub.get_name());
+        walk_region(&sub);
+    }
+}
+
 fn start_of_sim(_data: &vhpi::CbData) {
     vhpi::printf("start of simulation");
 
-    let null = vhpi::Handle::null();
-    let root = null.handle(vhpi::OneToOne::RootInst);
+    let root = vhpi::handle(vhpi::OneToOne::RootInst);
 
     println!("root name is {}", root.get_name());
     println!("root kind is {:?}", root.get_kind());
 
-    for sig in root.iterator(vhpi::OneToMany::SigDecls) {
-        println!("signal {}", sig.get_name());
-        sig.register_cb(vhpi::CbReason::ValueChange, value_change);
-    }
+    walk_region(&root);
 }
 
 fn next_time_step(_data: &vhpi::CbData) {

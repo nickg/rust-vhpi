@@ -1,5 +1,6 @@
-use bindings::{vhpiHandleT, vhpi_compare_handles, vhpi_handle, vhpi_iterator,
-               vhpi_release_handle, vhpi_scan};
+use bindings::{vhpiHandleT, vhpi_compare_handles, vhpi_handle, vhpi_handle_by_name,
+               vhpi_iterator, vhpi_release_handle, vhpi_scan};
+use std::ffi::CString;
 
 #[repr(u32)]
 pub enum OneToOne {
@@ -10,6 +11,7 @@ pub enum OneToOne {
 pub enum OneToMany {
     Decls = bindings::vhpiOneToManyT_vhpiDecls,
     SigDecls = bindings::vhpiOneToManyT_vhpiSigDecls,
+    PortDecls = bindings::vhpiOneToManyT_vhpiPortDecls,
     InternalRegions = bindings::vhpiOneToManyT_vhpiInternalRegions
 }
 
@@ -72,6 +74,13 @@ impl Handle {
         Handle::from_raw(unsafe { vhpi_handle(property as u32, self.as_raw()) })
     }
 
+    pub fn handle_by_name(&self, name: &str) -> Handle {
+        let c_name = CString::new(name).unwrap();
+        Handle::from_raw(unsafe {
+            vhpi_handle_by_name(c_name.as_ptr() as *const i8, self.as_raw())
+        })
+    }
+
     pub fn iterator(&self, typ: OneToMany) -> HandleIterator {
         let raw = unsafe { vhpi_iterator(typ as u32, self.as_raw()) };
         HandleIterator {
@@ -98,4 +107,15 @@ impl Iterator for HandleIterator {
             Some(next)
         }
     }
+}
+
+pub fn handle(property: OneToOne) -> Handle {
+    Handle::from_raw(unsafe { vhpi_handle(property as u32, std::ptr::null_mut()) })
+}
+
+pub fn handle_by_name(name: &str) -> Handle {
+    let c_name = CString::new(name).unwrap();
+    Handle::from_raw(unsafe {
+        vhpi_handle_by_name(c_name.as_ptr() as *const i8, std::ptr::null_mut())
+    })
 }
