@@ -1,0 +1,16 @@
+[package]
+name = "vhpi"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Rust wrapper around the IEEE 1076 VHPI"
+
+[lib]
+name = "vhpi"
+path = "src/lib.rs"
+
+[dependencies]
+bindings = { path = "../bindings" }
+num = "0.4"
+num-derive = "0.4"
+num-traits = "0.2"
