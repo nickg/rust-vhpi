@@ -56,8 +56,12 @@ impl Handle {
         self.handle.is_null()
     }
 
-    pub fn as_raw(&self) -> vhpiHandleT {
+    pub(crate) fn as_raw(&self) -> vhpiHandleT {
         self.handle
+    }
+
+    pub(crate) fn clear(&mut self) {
+        self.handle = std::ptr::null_mut();
     }
 
     pub fn from_raw(raw: vhpiHandleT) -> Self {
@@ -88,7 +92,7 @@ impl Iterator for HandleIterator {
 
         if next.is_null() {
             // The handle is automatically released when the iterator is exhausted
-            self.iter.handle = std::ptr::null_mut();
+            self.iter.clear();
             None
         } else {
             Some(next)

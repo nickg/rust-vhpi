@@ -1,4 +1,8 @@
-fn start_of_sim() {
+fn value_change(_data: &vhpi::CbData) {
+    vhpi::printf("value change");
+}
+
+fn start_of_sim(_data: &vhpi::CbData) {
     vhpi::printf("start of simulation");
 
     let null = vhpi::Handle::null();
@@ -9,14 +13,15 @@ fn start_of_sim() {
 
     for sig in root.iterator(vhpi::OneToMany::SigDecls) {
         println!("signal {}", sig.get_name());
+        sig.register_cb(vhpi::CbReason::ValueChange, value_change);
     }
 }
 
-fn next_time_step() {
+fn next_time_step(_data: &vhpi::CbData) {
     vhpi::printf("next time step");
 }
 
-fn end_of_sim() {
+fn end_of_sim(_data: &vhpi::CbData) {
     vhpi::printf("end of simulation");
 }
 
@@ -24,10 +29,7 @@ fn end_of_sim() {
 pub extern "C" fn dumper_startup() {
     vhpi::printf("dumper plugin loaded");
 
-    vhpi::Callback::new(vhpi::CbReason::StartOfSimulation, start_of_sim)
-        .register();
-    vhpi::Callback::new(vhpi::CbReason::EndOfSimulation, end_of_sim)
-        .register();
-    vhpi::Callback::new(vhpi::CbReason::RepNextTimeStep, next_time_step)
-        .register();
+    vhpi::register_cb(vhpi::CbReason::StartOfSimulation, start_of_sim);
+    vhpi::register_cb(vhpi::CbReason::EndOfSimulation, end_of_sim);
+    vhpi::register_cb(vhpi::CbReason::NextTimeStep, next_time_step);
 }
