@@ -1,5 +1,6 @@
-fn value_change(_data: &vhpi::CbData) {
-    vhpi::printf("value change");
+fn value_change(data: &vhpi::CbData) {
+    let value = data.obj.get_value(vhpi::Format::ObjType).unwrap();
+    vhpi::printf!("value change {} => {}", data.obj.get_name(), value);
 }
 
 fn walk_region(region: &vhpi::Handle) {
@@ -24,8 +25,8 @@ fn start_of_sim(_data: &vhpi::CbData) {
 
     let root = vhpi::handle(vhpi::OneToOne::RootInst);
 
-    println!("root name is {}", root.get_name());
-    println!("root kind is {:?}", root.get_kind());
+    vhpi::printf!("root name is {}", root.get_name());
+    vhpi::printf!("root kind is {:?}", root.get_kind());
 
     walk_region(&root);
 }
