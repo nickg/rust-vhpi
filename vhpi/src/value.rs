@@ -8,6 +8,9 @@ use std::fmt;
 pub enum Value {
     BinStr(String),
     Int(i32),
+    Logic(u8),
+    SmallEnum(u8),
+    Enum(u32),
     Unknown,
 }
 
@@ -16,6 +19,9 @@ impl fmt::Display for Value {
         match self {
             Value::BinStr(s) => write!(f, "{}", s),
             Value::Int(n) => write!(f, "{}", n),
+            Value::Logic(n) => write!(f, "{}", n),
+            Value::SmallEnum(n) => write!(f, "{}", n),
+            Value::Enum(n) => write!(f, "{}", n),
             Value::Unknown => write!(f, "?"),
         }
     }
@@ -26,6 +32,9 @@ pub enum Format {
     ObjType,
     BinStr,
     Int,
+    Logic,
+    SmallEnum,
+    Enum,
     Unknown(u32),
 }
 
@@ -35,6 +44,9 @@ impl From<bindings::vhpiSeverityT> for Format {
             bindings::vhpiFormatT_vhpiObjTypeVal => Format::ObjType,
             bindings::vhpiFormatT_vhpiBinStrVal => Format::BinStr,
             bindings::vhpiFormatT_vhpiIntVal => Format::Int,
+            bindings::vhpiFormatT_vhpiLogicVal => Format::Logic,
+            bindings::vhpiFormatT_vhpiSmallEnumVal => Format::SmallEnum,
+            bindings::vhpiFormatT_vhpiEnumVal => Format::Enum,
             other => Format::Unknown(other),
         }
     }
@@ -46,6 +58,9 @@ impl From<Format> for bindings::vhpiFormatT {
             Format::ObjType => bindings::vhpiFormatT_vhpiObjTypeVal,
             Format::BinStr => bindings::vhpiFormatT_vhpiBinStrVal,
             Format::Int => bindings::vhpiFormatT_vhpiIntVal,
+            Format::Logic => bindings::vhpiFormatT_vhpiLogicVal,
+            Format::SmallEnum => bindings::vhpiFormatT_vhpiSmallEnumVal,
+            Format::Enum => bindings::vhpiFormatT_vhpiEnumVal,
             Format::Unknown(n) => n,
         }
     }
@@ -70,7 +85,7 @@ impl Handle {
         };
 
         let rc = unsafe { bindings::vhpi_get_value(self.as_raw(), &mut val as *mut _) };
-        if rc != 0 {
+        if rc < 0 {
             return Err(crate::check_error().unwrap_or_else(
                 || "Unknown error in vhpi_get_value".into()));
         }
@@ -78,6 +93,12 @@ impl Handle {
         match val.format {
             bindings::vhpiFormatT_vhpiIntVal =>
                 Ok(Value::Int(unsafe { val.value.intg })),
+            bindings::vhpiFormatT_vhpiLogicVal =>
+                Ok(Value::Logic(unsafe { val.value.enumv as u8 })),
+            bindings::vhpiFormatT_vhpiEnumVal =>
+                Ok(Value::Enum(unsafe { val.value.enumv })),
+            bindings::vhpiFormatT_vhpiSmallEnumVal =>
+                Ok(Value::SmallEnum(unsafe { val.value.smallenumv })),
             bindings::vhpiFormatT_vhpiBinStrVal => {
                 let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
                 let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;

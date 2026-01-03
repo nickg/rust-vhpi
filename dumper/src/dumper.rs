@@ -1,6 +1,7 @@
 fn value_change(data: &vhpi::CbData) {
     let value = data.obj.get_value(vhpi::Format::ObjType).unwrap();
-    vhpi::printf!("value change {} => {}", data.obj.get_name(), value);
+    let full_name = data.obj.get_str(vhpi::StrProperty::FullName).unwrap();
+    vhpi::printf!("value change {} => {}", full_name, value);
 }
 
 fn walk_region(region: &vhpi::Handle) {
