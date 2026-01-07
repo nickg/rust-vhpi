@@ -48,31 +48,31 @@ pub enum Format {
     Unknown(u32),
 }
 
-impl From<bindings::vhpiSeverityT> for Format {
-    fn from(raw: bindings::vhpiSeverityT) -> Self {
+impl From<vhpi_sys::vhpiSeverityT> for Format {
+    fn from(raw: vhpi_sys::vhpiSeverityT) -> Self {
         match raw {
-            bindings::vhpiFormatT_vhpiObjTypeVal => Format::ObjType,
-            bindings::vhpiFormatT_vhpiBinStrVal => Format::BinStr,
-            bindings::vhpiFormatT_vhpiIntVal => Format::Int,
-            bindings::vhpiFormatT_vhpiLogicVal => Format::Logic,
-            bindings::vhpiFormatT_vhpiLogicVecVal => Format::LogicVec,
-            bindings::vhpiFormatT_vhpiSmallEnumVal => Format::SmallEnum,
-            bindings::vhpiFormatT_vhpiEnumVal => Format::Enum,
+            vhpi_sys::vhpiFormatT_vhpiObjTypeVal => Format::ObjType,
+            vhpi_sys::vhpiFormatT_vhpiBinStrVal => Format::BinStr,
+            vhpi_sys::vhpiFormatT_vhpiIntVal => Format::Int,
+            vhpi_sys::vhpiFormatT_vhpiLogicVal => Format::Logic,
+            vhpi_sys::vhpiFormatT_vhpiLogicVecVal => Format::LogicVec,
+            vhpi_sys::vhpiFormatT_vhpiSmallEnumVal => Format::SmallEnum,
+            vhpi_sys::vhpiFormatT_vhpiEnumVal => Format::Enum,
             other => Format::Unknown(other),
         }
     }
 }
 
-impl From<Format> for bindings::vhpiFormatT {
+impl From<Format> for vhpi_sys::vhpiFormatT {
     fn from(format: Format) -> Self {
         match format {
-            Format::ObjType => bindings::vhpiFormatT_vhpiObjTypeVal,
-            Format::BinStr => bindings::vhpiFormatT_vhpiBinStrVal,
-            Format::Int => bindings::vhpiFormatT_vhpiIntVal,
-            Format::Logic => bindings::vhpiFormatT_vhpiLogicVal,
-            Format::LogicVec => bindings::vhpiFormatT_vhpiLogicVecVal,
-            Format::SmallEnum => bindings::vhpiFormatT_vhpiSmallEnumVal,
-            Format::Enum => bindings::vhpiFormatT_vhpiEnumVal,
+            Format::ObjType => vhpi_sys::vhpiFormatT_vhpiObjTypeVal,
+            Format::BinStr => vhpi_sys::vhpiFormatT_vhpiBinStrVal,
+            Format::Int => vhpi_sys::vhpiFormatT_vhpiIntVal,
+            Format::Logic => vhpi_sys::vhpiFormatT_vhpiLogicVal,
+            Format::LogicVec => vhpi_sys::vhpiFormatT_vhpiLogicVecVal,
+            Format::SmallEnum => vhpi_sys::vhpiFormatT_vhpiSmallEnumVal,
+            Format::Enum => vhpi_sys::vhpiFormatT_vhpiEnumVal,
             Format::Unknown(n) => n,
         }
     }
@@ -80,25 +80,25 @@ impl From<Format> for bindings::vhpiFormatT {
 
 impl Handle {
     pub fn get_value(&self, format: Format) -> Result<Value, Error> {
-        let mut val = bindings::vhpiValueT {
+        let mut val = vhpi_sys::vhpiValueT {
             format: format.into(),
             bufSize: 0,
             numElems: 0,
-            unit: bindings::vhpiPhysS { high: 0, low: 0 },
-            value: bindings::vhpiValueS__bindgen_ty_1 {
+            unit: vhpi_sys::vhpiPhysS { high: 0, low: 0 },
+            value: vhpi_sys::vhpiValueS__bindgen_ty_1 {
                 longintg: 0,
             },
         };
 
-        let mut rc = unsafe { bindings::vhpi_get_value(self.as_raw(), &mut val as *mut _) };
+        let mut rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &mut val as *mut _) };
         let mut buffer: Vec<u8> = vec![];
 
         if rc > 0 {
             // Need to allocate buffer space
             let buf_size = match val.format {
-                bindings::vhpiFormatT_vhpiBinStrVal => rc as usize,
-                bindings::vhpiFormatT_vhpiLogicVecVal => {
-                    rc as usize * size_of::<bindings::vhpiEnumT>()
+                vhpi_sys::vhpiFormatT_vhpiBinStrVal => rc as usize,
+                vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
+                    rc as usize * size_of::<vhpi_sys::vhpiEnumT>()
                 }
                 _ => {
                     panic!("unsupported vector format {}", val.format);
@@ -108,18 +108,18 @@ impl Handle {
             val.bufSize = buf_size;
 
             match val.format {
-                bindings::vhpiFormatT_vhpiBinStrVal => {
-                    val.value.str_ = buffer.as_mut_ptr() as *mut bindings::vhpiCharT;
+                vhpi_sys::vhpiFormatT_vhpiBinStrVal => {
+                    val.value.str_ = buffer.as_mut_ptr() as *mut vhpi_sys::vhpiCharT;
                 }
-                bindings::vhpiFormatT_vhpiLogicVecVal => {
-                    val.value.enumvs = buffer.as_mut_ptr() as *mut bindings::vhpiEnumT;
+                vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
+                    val.value.enumvs = buffer.as_mut_ptr() as *mut vhpi_sys::vhpiEnumT;
                 }
                 _ => {
                     panic!("unsupported vector format {}", val.format);
                 }
             }
 
-            rc = unsafe { bindings::vhpi_get_value(self.as_raw(), &mut val as *mut _) };
+            rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &mut val as *mut _) };
         }
 
         if rc < 0 {
@@ -128,20 +128,20 @@ impl Handle {
         }
 
         match val.format {
-            bindings::vhpiFormatT_vhpiIntVal =>
+            vhpi_sys::vhpiFormatT_vhpiIntVal =>
                 Ok(Value::Int(unsafe { val.value.intg })),
-            bindings::vhpiFormatT_vhpiLogicVal =>
+            vhpi_sys::vhpiFormatT_vhpiLogicVal =>
                 Ok(Value::Logic(LogicVal::from(unsafe { val.value.enumv as u8 }))),
-            bindings::vhpiFormatT_vhpiEnumVal =>
+            vhpi_sys::vhpiFormatT_vhpiEnumVal =>
                 Ok(Value::Enum(unsafe { val.value.enumv })),
-            bindings::vhpiFormatT_vhpiSmallEnumVal =>
+            vhpi_sys::vhpiFormatT_vhpiSmallEnumVal =>
                 Ok(Value::SmallEnum(unsafe { val.value.smallenumv })),
-            bindings::vhpiFormatT_vhpiBinStrVal => {
+            vhpi_sys::vhpiFormatT_vhpiBinStrVal => {
                 let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
                 let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
                 Ok(Value::BinStr(rust_str.to_owned()))
             }
-            bindings::vhpiFormatT_vhpiLogicVecVal => {
+            vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
                 let slice = unsafe {
                     std::slice::from_raw_parts(val.value.enumvs, val.numElems as usize)
                 };

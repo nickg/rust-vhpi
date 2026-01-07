@@ -18,15 +18,15 @@ pub enum LogicVal {
 impl From<u8> for LogicVal {
     fn from(val: u8) -> Self {
         match val as u32 {
-            bindings::vhpiU => LogicVal::U,
-            bindings::vhpiX => LogicVal::X,
-            bindings::vhpi0 => LogicVal::Zero,
-            bindings::vhpi1 => LogicVal::One,
-            bindings::vhpiZ => LogicVal::Z,
-            bindings::vhpiW => LogicVal::W,
-            bindings::vhpiL => LogicVal::L,
-            bindings::vhpiH => LogicVal::H,
-            bindings::vhpiDontCare => LogicVal::DontCare,
+            vhpi_sys::vhpiU => LogicVal::U,
+            vhpi_sys::vhpiX => LogicVal::X,
+            vhpi_sys::vhpi0 => LogicVal::Zero,
+            vhpi_sys::vhpi1 => LogicVal::One,
+            vhpi_sys::vhpiZ => LogicVal::Z,
+            vhpi_sys::vhpiW => LogicVal::W,
+            vhpi_sys::vhpiL => LogicVal::L,
+            vhpi_sys::vhpiH => LogicVal::H,
+            vhpi_sys::vhpiDontCare => LogicVal::DontCare,
             _ => LogicVal::Unknown(val),
         }
     }

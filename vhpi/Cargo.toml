@@ -10,7 +10,7 @@ name = "vhpi"
 path = "src/lib.rs"
 
 [dependencies]
-bindings = { path = "../bindings" }
+vhpi-sys = { path = "../vhpi-sys" }
 num = "0.4"
 num-derive = "0.4"
 num-traits = "0.2"

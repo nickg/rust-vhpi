@@ -12,8 +12,8 @@ pub enum Severity {
     Unknown(u32),
 }
 
-impl From<bindings::vhpiSeverityT> for Severity {
-    fn from(raw: bindings::vhpiSeverityT) -> Self {
+impl From<vhpi_sys::vhpiSeverityT> for Severity {
+    fn from(raw: vhpi_sys::vhpiSeverityT) -> Self {
         match raw {
             1 => Severity::Note,
             2 => Severity::Warning,
@@ -26,7 +26,7 @@ impl From<bindings::vhpiSeverityT> for Severity {
     }
 }
 
-impl From<Severity> for bindings::vhpiSeverityT {
+impl From<Severity> for vhpi_sys::vhpiSeverityT {
     fn from(sev: Severity) -> Self {
         match sev {
             Severity::Note => 1,
@@ -88,15 +88,15 @@ impl From<&str> for Error {
 }
 
 pub fn check_error() -> Option<Error> {
-    let mut info = bindings::vhpiErrorInfoS {
-        severity: bindings::vhpiSeverityT_vhpiNote,
+    let mut info = vhpi_sys::vhpiErrorInfoS {
+        severity: vhpi_sys::vhpiSeverityT_vhpiNote,
         message: std::ptr::null_mut(),
         str_: std::ptr::null_mut(),
         file: std::ptr::null_mut(),
         line: -1,
     };
 
-    let rc = unsafe { bindings::vhpi_check_error(&mut info as *mut _) };
+    let rc = unsafe { vhpi_sys::vhpi_check_error(&mut info as *mut _) };
     if rc == 0 {
         return None;
     }
