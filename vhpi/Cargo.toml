@@ -1,19 +1,20 @@
 [package]
 name = "vhpi"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Rust wrapper around the IEEE 1076 VHPI"
 repository = "https://github.com/nickg/rust-vhpi"
 keywords = ["vhdl", "vhpi", "wrapper", "hardware-simulation"]
 categories = ["simulation", "api-bindings"]
+readme = "README.md"
 
 [lib]
 name = "vhpi"
 path = "src/lib.rs"
 
 [dependencies]
-vhpi-sys = { version = "0.1.0", path = "../vhpi-sys" }
 num = "0.4"
 num-derive = "0.4"
 num-traits = "0.2"
+vhpi-sys = { version = "0.1.1", path = "../vhpi-sys" }
