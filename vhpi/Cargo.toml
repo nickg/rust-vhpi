@@ -14,7 +14,7 @@ name = "vhpi"
 path = "src/lib.rs"
 
 [dependencies]
-num = "0.4"
+bitflags = "2.11"
 num-derive = "0.4"
 num-traits = "0.2"
 vhpi-sys = { version = "0.1.1", path = "../vhpi-sys" }

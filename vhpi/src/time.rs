@@ -2,6 +2,7 @@ use vhpi_sys::vhpi_get_time;
 
 use crate::Handle;
 
+#[derive(Debug, Clone)]
 pub struct Time {
     pub low: u32,
     pub high: i32,
@@ -30,6 +31,15 @@ impl From<vhpi_sys::vhpiTimeT> for Time {
         Time {
             low: raw.low,
             high: raw.high,
+        }
+    }
+}
+
+impl From<Time> for vhpi_sys::vhpiTimeT {
+    fn from(time: Time) -> Self {
+        vhpi_sys::vhpiTimeT {
+            low: time.low,
+            high: time.high,
         }
     }
 }
