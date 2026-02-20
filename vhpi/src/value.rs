@@ -50,7 +50,7 @@ impl fmt::Display for Value {
                     f,
                     "[{}]",
                     v.iter()
-                        .map(|val| val.to_string())
+                        .map(std::string::ToString::to_string)
                         .collect::<Vec<_>>()
                         .join(", ")
                 )?;
@@ -61,7 +61,7 @@ impl fmt::Display for Value {
                     f,
                     "[{}]",
                     v.iter()
-                        .map(|val| val.to_string())
+                        .map(std::string::ToString::to_string)
                         .collect::<Vec<_>>()
                         .join(", ")
                 )?;
@@ -134,6 +134,28 @@ impl From<Format> for vhpi_sys::vhpiFormatT {
             Format::RealVec => vhpi_sys::vhpiFormatT_vhpiRealVecVal,
             Format::IntVec => vhpi_sys::vhpiFormatT_vhpiIntVecVal,
             Format::Unknown(n) => n,
+        }
+    }
+}
+
+pub enum PutValueMode {
+    Deposit,
+    DepositPropagate,
+    Force,
+    ForcePropagate,
+    Release,
+    SizeConstraint,
+}
+
+impl From<PutValueMode> for vhpi_sys::vhpiPutValueModeT {
+    fn from(mode: PutValueMode) -> Self {
+        match mode {
+            PutValueMode::Deposit => vhpi_sys::vhpiPutValueModeT_vhpiDeposit,
+            PutValueMode::DepositPropagate => vhpi_sys::vhpiPutValueModeT_vhpiDepositPropagate,
+            PutValueMode::Force => vhpi_sys::vhpiPutValueModeT_vhpiForce,
+            PutValueMode::ForcePropagate => vhpi_sys::vhpiPutValueModeT_vhpiForcePropagate,
+            PutValueMode::Release => vhpi_sys::vhpiPutValueModeT_vhpiRelease,
+            PutValueMode::SizeConstraint => vhpi_sys::vhpiPutValueModeT_vhpiSizeConstraint,
         }
     }
 }
@@ -261,5 +283,88 @@ impl Handle {
             }
             _ => Ok(Value::Unknown),
         }
+    }
+
+    pub fn put_value(&self, value: Value, mode: PutValueMode) -> Result<(), Error> {
+        let (format, val) = match value {
+            Value::Int(n) => (Format::Int, vhpi_sys::vhpiValueS__bindgen_ty_1 { intg: n }),
+            Value::Logic(n) => (
+                Format::Logic,
+                vhpi_sys::vhpiValueS__bindgen_ty_1 { enumv: n.into() },
+            ),
+            Value::Enum(n) => (
+                Format::Enum,
+                vhpi_sys::vhpiValueS__bindgen_ty_1 { enumv: n },
+            ),
+            Value::SmallEnum(n) => (
+                Format::SmallEnum,
+                vhpi_sys::vhpiValueS__bindgen_ty_1 { smallenumv: n },
+            ),
+            Value::BinStr(s)
+            | Value::OctStr(s)
+            | Value::HexStr(s)
+            | Value::DecStr(s)
+            | Value::Str(s) => {
+                let c_string = std::ffi::CString::new(s)
+                    .map_err(|_| "Failed to convert string to C string")?;
+                let ptr = c_string.into_raw().cast::<vhpi_sys::vhpiCharT>();
+                (
+                    Format::BinStr,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { str_: ptr },
+                )
+            }
+            Value::LogicVec(vec) => {
+                let mut buffer: Vec<vhpi_sys::vhpiEnumT> =
+                    vec.iter().map(|&val| val.into()).collect();
+                let ptr = buffer.as_mut_ptr();
+                std::mem::forget(buffer); // Prevent Rust from freeing the buffer
+                (
+                    Format::LogicVec,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { enumvs: ptr },
+                )
+            }
+            Value::IntVec(vec) => {
+                let mut buffer: Vec<i32> = vec.clone();
+                let ptr = buffer.as_mut_ptr();
+                std::mem::forget(buffer); // Prevent Rust from freeing the buffer
+                (
+                    Format::IntVec,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { ptr: ptr.cast() },
+                )
+            }
+            Value::RealVec(vec) => {
+                let mut buffer: Vec<f64> = vec.clone();
+                let ptr = buffer.as_mut_ptr();
+                std::mem::forget(buffer); // Prevent Rust from freeing the buffer
+                (
+                    Format::RealVec,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { ptr: ptr.cast() },
+                )
+            }
+            Value::Real(n) => (Format::Real, vhpi_sys::vhpiValueS__bindgen_ty_1 { real: n }),
+            Value::Char(c) => (
+                Format::Char,
+                vhpi_sys::vhpiValueS__bindgen_ty_1 { ch: c as u8 },
+            ),
+            Value::Unknown => return Err("Cannot put unknown value".into()),
+        };
+
+        let mut val_struct = vhpi_sys::vhpiValueT {
+            format: format.into(),
+            bufSize: 0,
+            numElems: 0,
+            unit: vhpi_sys::vhpiPhysS { high: 0, low: 0 },
+            value: val,
+        };
+
+        let rc =
+            unsafe { vhpi_sys::vhpi_put_value(self.as_raw(), &raw mut val_struct, mode.into()) };
+        if rc < 0 {
+            return Err(
+                crate::check_error().unwrap_or_else(|| "Unknown error in vhpi_put_value".into())
+            );
+        }
+
+        Ok(())
     }
 }
