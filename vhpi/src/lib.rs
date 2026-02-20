@@ -22,7 +22,7 @@ extern crate num_derive;
 pub fn printf(msg: impl AsRef<str>) {
     let cstr = CString::new(msg.as_ref()).unwrap();
     static FMT: &[u8] = b"%s\n\0";
-    unsafe { vhpi_sys::vhpi_printf(FMT.as_ptr() as *const i8, cstr.as_ptr()) };
+    unsafe { vhpi_sys::vhpi_printf(FMT.as_ptr().cast::<i8>(), cstr.as_ptr()) };
 }
 
 #[macro_export]

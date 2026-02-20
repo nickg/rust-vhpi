@@ -20,17 +20,17 @@ pub enum Value {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Value::BinStr(s) => write!(f, "{}", s),
-            Value::Int(n) => write!(f, "{}", n),
-            Value::Logic(n) => write!(f, "{}", n),
+            Value::BinStr(s) => write!(f, "{s}"),
+            Value::Int(n) => write!(f, "{n}"),
+            Value::Logic(n) => write!(f, "{n}"),
             Value::LogicVec(v) => {
-                for val in v.iter() {
-                    write!(f, "{}", val)?;
+                for val in v {
+                    write!(f, "{val}")?;
                 }
                 Ok(())
             }
-            Value::SmallEnum(n) => write!(f, "{}", n),
-            Value::Enum(n) => write!(f, "{}", n),
+            Value::SmallEnum(n) => write!(f, "{n}"),
+            Value::Enum(n) => write!(f, "{n}"),
             Value::Unknown => write!(f, "?"),
         }
     }
@@ -88,7 +88,7 @@ impl Handle {
             value: vhpi_sys::vhpiValueS__bindgen_ty_1 { longintg: 0 },
         };
 
-        let mut rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &mut val as *mut _) };
+        let mut rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &raw mut val) };
         let mut buffer: Vec<u8> = vec![];
 
         if rc > 0 {
@@ -107,17 +107,17 @@ impl Handle {
 
             match val.format {
                 vhpi_sys::vhpiFormatT_vhpiBinStrVal => {
-                    val.value.str_ = buffer.as_mut_ptr() as *mut vhpi_sys::vhpiCharT;
+                    val.value.str_ = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiCharT>();
                 }
                 vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
-                    val.value.enumvs = buffer.as_mut_ptr() as *mut vhpi_sys::vhpiEnumT;
+                    val.value.enumvs = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiEnumT>();
                 }
                 _ => {
                     panic!("unsupported vector format {}", val.format);
                 }
             }
 
-            rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &mut val as *mut _) };
+            rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &raw mut val) };
         }
 
         if rc < 0 {
