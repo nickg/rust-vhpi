@@ -1,6 +1,8 @@
 use crate::Error;
 use crate::Handle;
 use crate::LogicVal;
+use crate::Physical;
+use crate::Time;
 
 use std::ffi::CStr;
 use std::fmt;
@@ -14,14 +16,24 @@ pub enum Value {
     DecStr(String),
     Char(char),
     Int(i32),
+    IntVec(Vec<i32>),
     Logic(LogicVal),
     LogicVec(Vec<LogicVal>),
     SmallEnum(u8),
+    SmallEnumVec(Vec<u8>),
     Enum(u32),
+    EnumVec(Vec<u32>),
     Str(String),
     Real(f64),
     RealVec(Vec<f64>),
-    IntVec(Vec<i32>),
+    Time(Time),
+    TimeVec(Vec<Time>),
+    LongInt(i64),
+    LongIntVec(Vec<i64>),
+    SmallPhysical(i32),
+    SmallPhysicalVec(Vec<i32>),
+    Physical(Physical),
+    PhysicalVec(Vec<Physical>),
     Unknown,
 }
 
@@ -42,7 +54,29 @@ impl fmt::Display for Value {
                 Ok(())
             }
             Value::SmallEnum(n) => write!(f, "{n}"),
+            Value::SmallEnumVec(v) => {
+                write!(
+                    f,
+                    "[{}]",
+                    v.iter()
+                        .map(std::string::ToString::to_string)
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )?;
+                Ok(())
+            }
             Value::Enum(n) => write!(f, "{n}"),
+            Value::EnumVec(v) => {
+                write!(
+                    f,
+                    "[{}]",
+                    v.iter()
+                        .map(std::string::ToString::to_string)
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )?;
+                Ok(())
+            }
             Value::Str(s) => write!(f, "{s}"),
             Value::Real(n) => write!(f, "{n}"),
             Value::RealVec(v) => {
@@ -67,6 +101,54 @@ impl fmt::Display for Value {
                 )?;
                 Ok(())
             }
+            Value::Time(t) => write!(f, "{}", t.to_i64()),
+            Value::TimeVec(v) => {
+                write!(
+                    f,
+                    "[{}]",
+                    v.iter()
+                        .map(|t| t.to_i64().to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )?;
+                Ok(())
+            }
+            Value::LongInt(n) => write!(f, "{n}"),
+            Value::LongIntVec(v) => {
+                write!(
+                    f,
+                    "[{}]",
+                    v.iter()
+                        .map(std::string::ToString::to_string)
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )?;
+                Ok(())
+            }
+            Value::SmallPhysical(n) => write!(f, "{n}"),
+            Value::SmallPhysicalVec(v) => {
+                write!(
+                    f,
+                    "[{}]",
+                    v.iter()
+                        .map(std::string::ToString::to_string)
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )?;
+                Ok(())
+            }
+            Value::Physical(p) => write!(f, "{}", p.to_i64()),
+            Value::PhysicalVec(v) => {
+                write!(
+                    f,
+                    "[{}]",
+                    v.iter()
+                        .map(|p| p.to_i64().to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )?;
+                Ok(())
+            }
             Value::Unknown => write!(f, "?"),
         }
     }
@@ -84,11 +166,21 @@ pub enum Format {
     Logic,
     LogicVec,
     SmallEnum,
+    SmallEnumVec,
     Enum,
+    EnumVec,
     Str,
     Real,
     RealVec,
     IntVec,
+    LongInt,
+    LongIntVec,
+    SmallPhysical,
+    SmallPhysicalVec,
+    Physical,
+    PhysicalVec,
+    Time,
+    TimeVec,
     Unknown(u32),
 }
 
@@ -105,11 +197,21 @@ impl From<vhpi_sys::vhpiSeverityT> for Format {
             vhpi_sys::vhpiFormatT_vhpiLogicVal => Format::Logic,
             vhpi_sys::vhpiFormatT_vhpiLogicVecVal => Format::LogicVec,
             vhpi_sys::vhpiFormatT_vhpiSmallEnumVal => Format::SmallEnum,
+            vhpi_sys::vhpiFormatT_vhpiSmallEnumVecVal => Format::SmallEnumVec,
             vhpi_sys::vhpiFormatT_vhpiEnumVal => Format::Enum,
+            vhpi_sys::vhpiFormatT_vhpiEnumVecVal => Format::EnumVec,
             vhpi_sys::vhpiFormatT_vhpiStrVal => Format::Str,
             vhpi_sys::vhpiFormatT_vhpiRealVal => Format::Real,
             vhpi_sys::vhpiFormatT_vhpiRealVecVal => Format::RealVec,
             vhpi_sys::vhpiFormatT_vhpiIntVecVal => Format::IntVec,
+            vhpi_sys::vhpiFormatT_vhpiLongIntVal => Format::LongInt,
+            vhpi_sys::vhpiFormatT_vhpiLongIntVecVal => Format::LongIntVec,
+            vhpi_sys::vhpiFormatT_vhpiSmallPhysVal => Format::SmallPhysical,
+            vhpi_sys::vhpiFormatT_vhpiSmallPhysVecVal => Format::SmallPhysicalVec,
+            vhpi_sys::vhpiFormatT_vhpiPhysVal => Format::Physical,
+            vhpi_sys::vhpiFormatT_vhpiPhysVecVal => Format::PhysicalVec,
+            vhpi_sys::vhpiFormatT_vhpiTimeVal => Format::Time,
+            vhpi_sys::vhpiFormatT_vhpiTimeVecVal => Format::TimeVec,
             other => Format::Unknown(other),
         }
     }
@@ -128,11 +230,21 @@ impl From<Format> for vhpi_sys::vhpiFormatT {
             Format::Logic => vhpi_sys::vhpiFormatT_vhpiLogicVal,
             Format::LogicVec => vhpi_sys::vhpiFormatT_vhpiLogicVecVal,
             Format::SmallEnum => vhpi_sys::vhpiFormatT_vhpiSmallEnumVal,
+            Format::SmallEnumVec => vhpi_sys::vhpiFormatT_vhpiSmallEnumVecVal,
             Format::Enum => vhpi_sys::vhpiFormatT_vhpiEnumVal,
+            Format::EnumVec => vhpi_sys::vhpiFormatT_vhpiEnumVecVal,
             Format::Str => vhpi_sys::vhpiFormatT_vhpiStrVal,
             Format::Real => vhpi_sys::vhpiFormatT_vhpiRealVal,
             Format::RealVec => vhpi_sys::vhpiFormatT_vhpiRealVecVal,
             Format::IntVec => vhpi_sys::vhpiFormatT_vhpiIntVecVal,
+            Format::LongInt => vhpi_sys::vhpiFormatT_vhpiLongIntVal,
+            Format::LongIntVec => vhpi_sys::vhpiFormatT_vhpiLongIntVecVal,
+            Format::SmallPhysical => vhpi_sys::vhpiFormatT_vhpiSmallPhysVal,
+            Format::SmallPhysicalVec => vhpi_sys::vhpiFormatT_vhpiSmallPhysVecVal,
+            Format::Physical => vhpi_sys::vhpiFormatT_vhpiPhysVal,
+            Format::PhysicalVec => vhpi_sys::vhpiFormatT_vhpiPhysVecVal,
+            Format::Time => vhpi_sys::vhpiFormatT_vhpiTimeVal,
+            Format::TimeVec => vhpi_sys::vhpiFormatT_vhpiTimeVecVal,
             Format::Unknown(n) => n,
         }
     }
@@ -160,6 +272,25 @@ impl From<PutValueMode> for vhpi_sys::vhpiPutValueModeT {
     }
 }
 
+enum VectorBox {
+    #[allow(dead_code)]
+    Enum(Vec<vhpi_sys::vhpiEnumT>),
+    #[allow(dead_code)]
+    Int(Vec<vhpi_sys::vhpiIntT>),
+    #[allow(dead_code)]
+    Real(Vec<vhpi_sys::vhpiRealT>),
+    #[allow(dead_code)]
+    Time(Vec<vhpi_sys::vhpiTimeT>),
+    #[allow(dead_code)]
+    SmallEnum(Vec<vhpi_sys::vhpiSmallEnumT>),
+    #[allow(dead_code)]
+    LongInt(Vec<vhpi_sys::vhpiLongIntT>),
+    #[allow(dead_code)]
+    SmallPhys(Vec<vhpi_sys::vhpiSmallPhysT>),
+    #[allow(dead_code)]
+    Phys(Vec<vhpi_sys::vhpiPhysT>),
+}
+
 impl Handle {
     pub fn get_value(&self, format: Format) -> Result<Value, Error> {
         let mut val = vhpi_sys::vhpiValueT {
@@ -180,12 +311,36 @@ impl Handle {
                 | vhpi_sys::vhpiFormatT_vhpiStrVal
                 | vhpi_sys::vhpiFormatT_vhpiOctStrVal
                 | vhpi_sys::vhpiFormatT_vhpiHexStrVal
-                | vhpi_sys::vhpiFormatT_vhpiDecStrVal => rc as usize,
+                | vhpi_sys::vhpiFormatT_vhpiDecStrVal => {
+                    rc as usize * size_of::<vhpi_sys::vhpiCharT>()
+                }
                 vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
                     rc as usize * size_of::<vhpi_sys::vhpiEnumT>()
                 }
-                vhpi_sys::vhpiFormatT_vhpiRealVecVal => rc as usize * size_of::<f64>(),
-                vhpi_sys::vhpiFormatT_vhpiIntVecVal => rc as usize * size_of::<i32>(),
+                vhpi_sys::vhpiFormatT_vhpiRealVecVal => {
+                    rc as usize * size_of::<vhpi_sys::vhpiRealT>()
+                }
+                vhpi_sys::vhpiFormatT_vhpiIntVecVal => {
+                    rc as usize * size_of::<vhpi_sys::vhpiIntT>()
+                }
+                vhpi_sys::vhpiFormatT_vhpiLongIntVecVal => {
+                    rc as usize * size_of::<vhpi_sys::vhpiLongIntT>()
+                }
+                vhpi_sys::vhpiFormatT_vhpiSmallPhysVecVal => {
+                    rc as usize * size_of::<vhpi_sys::vhpiSmallPhysT>()
+                }
+                vhpi_sys::vhpiFormatT_vhpiPhysVecVal => {
+                    rc as usize * size_of::<vhpi_sys::vhpiPhysT>()
+                }
+                vhpi_sys::vhpiFormatT_vhpiTimeVecVal => {
+                    rc as usize * size_of::<vhpi_sys::vhpiTimeT>()
+                }
+                vhpi_sys::vhpiFormatT_vhpiSmallEnumVecVal => {
+                    rc as usize * size_of::<vhpi_sys::vhpiSmallEnumT>()
+                }
+                vhpi_sys::vhpiFormatT_vhpiEnumVecVal => {
+                    rc as usize * size_of::<vhpi_sys::vhpiEnumT>()
+                }
                 _ => {
                     panic!("unsupported vector format {}", val.format);
                 }
@@ -205,10 +360,28 @@ impl Handle {
                     val.value.enumvs = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiEnumT>();
                 }
                 vhpi_sys::vhpiFormatT_vhpiRealVecVal => {
-                    val.value.ptr = buffer.as_mut_ptr().cast::<std::ffi::c_void>();
+                    val.value.reals = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiRealT>();
                 }
                 vhpi_sys::vhpiFormatT_vhpiIntVecVal => {
-                    val.value.ptr = buffer.as_mut_ptr().cast::<std::ffi::c_void>();
+                    val.value.intgs = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiIntT>();
+                }
+                vhpi_sys::vhpiFormatT_vhpiLongIntVecVal => {
+                    val.value.longintgs = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiLongIntT>();
+                }
+                vhpi_sys::vhpiFormatT_vhpiEnumVecVal => {
+                    val.value.enumvs = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiEnumT>();
+                }
+                vhpi_sys::vhpiFormatT_vhpiSmallEnumVecVal => {
+                    val.value.smallenumvs = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiSmallEnumT>();
+                }
+                vhpi_sys::vhpiFormatT_vhpiSmallPhysVecVal => {
+                    val.value.smallphyss = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiSmallPhysT>();
+                }
+                vhpi_sys::vhpiFormatT_vhpiPhysVecVal => {
+                    val.value.physs = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiPhysT>();
+                }
+                vhpi_sys::vhpiFormatT_vhpiTimeVecVal => {
+                    val.value.times = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiTimeT>();
                 }
                 _ => {
                     panic!("unsupported vector format {}", val.format);
@@ -232,6 +405,9 @@ impl Handle {
             vhpi_sys::vhpiFormatT_vhpiEnumVal => Ok(Value::Enum(unsafe { val.value.enumv })),
             vhpi_sys::vhpiFormatT_vhpiSmallEnumVal => {
                 Ok(Value::SmallEnum(unsafe { val.value.smallenumv }))
+            }
+            vhpi_sys::vhpiFormatT_vhpiLongIntVal => {
+                Ok(Value::LongInt(unsafe { val.value.longintg }))
             }
             vhpi_sys::vhpiFormatT_vhpiRealVal => Ok(Value::Real(unsafe { val.value.real })),
             vhpi_sys::vhpiFormatT_vhpiCharVal => Ok(Value::Char(unsafe { val.value.ch as char })),
@@ -271,21 +447,78 @@ impl Handle {
             }
             vhpi_sys::vhpiFormatT_vhpiRealVecVal => {
                 let slice = unsafe {
-                    std::slice::from_raw_parts(val.value.ptr.cast::<f64>(), val.numElems as usize)
+                    std::slice::from_raw_parts(val.value.reals.cast::<f64>(), val.numElems as usize)
                 };
                 Ok(Value::RealVec(slice.to_vec()))
             }
             vhpi_sys::vhpiFormatT_vhpiIntVecVal => {
                 let slice = unsafe {
-                    std::slice::from_raw_parts(val.value.ptr.cast::<i32>(), val.numElems as usize)
+                    std::slice::from_raw_parts(val.value.intgs.cast::<i32>(), val.numElems as usize)
                 };
                 Ok(Value::IntVec(slice.to_vec()))
+            }
+            vhpi_sys::vhpiFormatT_vhpiTimeVal => Ok(Value::Time(unsafe { val.value.time.into() })),
+            vhpi_sys::vhpiFormatT_vhpiTimeVecVal => {
+                let slice = unsafe {
+                    std::slice::from_raw_parts(
+                        val.value.times.cast::<vhpi_sys::vhpiTimeT>(),
+                        val.numElems as usize,
+                    )
+                };
+                let time_vec: Vec<Time> = slice.iter().map(|&t| t.into()).collect();
+                Ok(Value::TimeVec(time_vec))
+            }
+            vhpi_sys::vhpiFormatT_vhpiSmallEnumVecVal => {
+                let slice = unsafe {
+                    std::slice::from_raw_parts(
+                        val.value.smallenumvs.cast::<vhpi_sys::vhpiSmallEnumT>(),
+                        val.numElems as usize,
+                    )
+                };
+                Ok(Value::SmallEnumVec(slice.to_vec()))
+            }
+            vhpi_sys::vhpiFormatT_vhpiEnumVecVal => {
+                let slice = unsafe {
+                    std::slice::from_raw_parts(
+                        val.value.enumvs.cast::<vhpi_sys::vhpiEnumT>(),
+                        val.numElems as usize,
+                    )
+                };
+                Ok(Value::EnumVec(slice.to_vec()))
+            }
+            vhpi_sys::vhpiFormatT_vhpiSmallPhysVal => {
+                Ok(Value::SmallPhysical(unsafe { val.value.smallphys }))
+            }
+            vhpi_sys::vhpiFormatT_vhpiSmallPhysVecVal => {
+                let slice = unsafe {
+                    std::slice::from_raw_parts(
+                        val.value.smallphyss.cast::<vhpi_sys::vhpiSmallPhysT>(),
+                        val.numElems as usize,
+                    )
+                };
+                Ok(Value::SmallPhysicalVec(slice.to_vec()))
+            }
+            vhpi_sys::vhpiFormatT_vhpiPhysVal => {
+                Ok(Value::Physical(unsafe { val.value.phys.into() }))
+            }
+            vhpi_sys::vhpiFormatT_vhpiPhysVecVal => {
+                let slice = unsafe {
+                    std::slice::from_raw_parts(
+                        val.value.physs.cast::<vhpi_sys::vhpiPhysT>(),
+                        val.numElems as usize,
+                    )
+                };
+                let phys_vec: Vec<Physical> = slice.iter().map(|&p| p.into()).collect();
+                Ok(Value::PhysicalVec(phys_vec))
             }
             _ => Ok(Value::Unknown),
         }
     }
 
     pub fn put_value(&self, value: Value, mode: PutValueMode) -> Result<(), Error> {
+        // Create a holder for any allocated buffer
+        let mut buffer_holder: Option<VectorBox> = None;
+
         let (format, val) = match value {
             Value::Int(n) => (Format::Int, vhpi_sys::vhpiValueS__bindgen_ty_1 { intg: n }),
             Value::Logic(n) => (
@@ -317,28 +550,42 @@ impl Handle {
                 let mut buffer: Vec<vhpi_sys::vhpiEnumT> =
                     vec.iter().map(|&val| val.into()).collect();
                 let ptr = buffer.as_mut_ptr();
-                std::mem::forget(buffer); // Prevent Rust from freeing the buffer
+                buffer_holder = Some(VectorBox::Enum(buffer));
                 (
                     Format::LogicVec,
                     vhpi_sys::vhpiValueS__bindgen_ty_1 { enumvs: ptr },
                 )
             }
             Value::IntVec(vec) => {
-                let mut buffer: Vec<i32> = vec.clone();
+                let mut buffer: Vec<vhpi_sys::vhpiIntT> = vec.clone();
                 let ptr = buffer.as_mut_ptr();
-                std::mem::forget(buffer); // Prevent Rust from freeing the buffer
+                buffer_holder = Some(VectorBox::Int(buffer));
                 (
                     Format::IntVec,
-                    vhpi_sys::vhpiValueS__bindgen_ty_1 { ptr: ptr.cast() },
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { intgs: ptr },
                 )
             }
             Value::RealVec(vec) => {
-                let mut buffer: Vec<f64> = vec.clone();
+                let mut buffer: Vec<vhpi_sys::vhpiRealT> = vec.clone();
                 let ptr = buffer.as_mut_ptr();
-                std::mem::forget(buffer); // Prevent Rust from freeing the buffer
+                buffer_holder = Some(VectorBox::Real(buffer));
                 (
                     Format::RealVec,
-                    vhpi_sys::vhpiValueS__bindgen_ty_1 { ptr: ptr.cast() },
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { reals: ptr },
+                )
+            }
+            Value::Time(t) => (
+                Format::Time,
+                vhpi_sys::vhpiValueS__bindgen_ty_1 { time: t.into() },
+            ),
+            Value::TimeVec(vec) => {
+                let mut buffer: Vec<vhpi_sys::vhpiTimeT> =
+                    vec.iter().map(|val| val.clone().into()).collect();
+                let ptr = buffer.as_mut_ptr();
+                buffer_holder = Some(VectorBox::Time(buffer));
+                (
+                    Format::TimeVec,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { times: ptr },
                 )
             }
             Value::Real(n) => (Format::Real, vhpi_sys::vhpiValueS__bindgen_ty_1 { real: n }),
@@ -346,6 +593,64 @@ impl Handle {
                 Format::Char,
                 vhpi_sys::vhpiValueS__bindgen_ty_1 { ch: c as u8 },
             ),
+            Value::SmallEnumVec(v) => {
+                let mut buffer: Vec<vhpi_sys::vhpiSmallEnumT> = v.clone();
+                let ptr = buffer.as_mut_ptr();
+                buffer_holder = Some(VectorBox::SmallEnum(buffer));
+                (
+                    Format::SmallEnumVec,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { smallenumvs: ptr },
+                )
+            }
+            Value::EnumVec(v) => {
+                let mut buffer: Vec<vhpi_sys::vhpiEnumT> = v.clone();
+                let ptr = buffer.as_mut_ptr();
+                buffer_holder = Some(VectorBox::Enum(buffer));
+                (
+                    Format::EnumVec,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { enumvs: ptr },
+                )
+            }
+            Value::LongInt(l) => (
+                Format::LongInt,
+                vhpi_sys::vhpiValueS__bindgen_ty_1 { longintg: l },
+            ),
+            Value::LongIntVec(vec) => {
+                let mut buffer: Vec<vhpi_sys::vhpiLongIntT> = vec.clone();
+                let ptr = buffer.as_mut_ptr();
+                buffer_holder = Some(VectorBox::LongInt(buffer));
+                (
+                    Format::LongIntVec,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { longintgs: ptr },
+                )
+            }
+            Value::SmallPhysical(s) => (
+                Format::SmallPhysical,
+                vhpi_sys::vhpiValueS__bindgen_ty_1 { smallphys: s },
+            ),
+            Value::SmallPhysicalVec(vec) => {
+                let mut buffer: Vec<vhpi_sys::vhpiSmallPhysT> = vec.clone();
+                let ptr = buffer.as_mut_ptr();
+                buffer_holder = Some(VectorBox::SmallPhys(buffer));
+                (
+                    Format::SmallPhysicalVec,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { smallphyss: ptr },
+                )
+            }
+            Value::Physical(p) => (
+                Format::Physical,
+                vhpi_sys::vhpiValueS__bindgen_ty_1 { phys: p.into() },
+            ),
+            Value::PhysicalVec(vec) => {
+                let mut buffer: Vec<vhpi_sys::vhpiPhysT> =
+                    vec.iter().map(|val| val.clone().into()).collect();
+                let ptr = buffer.as_mut_ptr();
+                buffer_holder = Some(VectorBox::Phys(buffer));
+                (
+                    Format::PhysicalVec,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { physs: ptr },
+                )
+            }
             Value::Unknown => return Err("Cannot put unknown value".into()),
         };
 
@@ -359,6 +664,10 @@ impl Handle {
 
         let rc =
             unsafe { vhpi_sys::vhpi_put_value(self.as_raw(), &raw mut val_struct, mode.into()) };
+
+        // Keep buffer_holder alive until after vhpi_put_value
+        let _ = &buffer_holder;
+
         if rc < 0 {
             return Err(
                 crate::check_error().unwrap_or_else(|| "Unknown error in vhpi_put_value".into())
