@@ -17,7 +17,7 @@ pub enum LogicVal {
 
 impl From<u8> for LogicVal {
     fn from(val: u8) -> Self {
-        match val as u32 {
+        match u32::from(val) {
             vhpi_sys::vhpiU => LogicVal::U,
             vhpi_sys::vhpiX => LogicVal::X,
             vhpi_sys::vhpi0 => LogicVal::Zero,
@@ -66,7 +66,7 @@ impl fmt::Display for LogicVal {
                 LogicVal::L => "L",
                 LogicVal::H => "H",
                 LogicVal::DontCare => "-",
-                LogicVal::Unknown(v) => return write!(f, "?({})", v),
+                LogicVal::Unknown(v) => return write!(f, "?({v})"),
             }
         )
     }

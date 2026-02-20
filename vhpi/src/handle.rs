@@ -1,6 +1,8 @@
-use vhpi_sys::{vhpiHandleT, vhpi_compare_handles, vhpi_handle, vhpi_handle_by_name,
-               vhpi_iterator, vhpi_release_handle, vhpi_scan};
 use std::ffi::CString;
+use vhpi_sys::{
+    vhpiHandleT, vhpi_compare_handles, vhpi_handle, vhpi_handle_by_name, vhpi_iterator,
+    vhpi_release_handle, vhpi_scan,
+};
 
 #[repr(u32)]
 pub enum OneToOne {
@@ -183,12 +185,14 @@ impl PartialEq for Handle {
 impl Eq for Handle {}
 
 impl Handle {
+    #[must_use]
     pub fn null() -> Self {
         Self {
             handle: std::ptr::null_mut(),
         }
     }
 
+    #[must_use]
     pub fn is_null(&self) -> bool {
         self.handle.is_null()
     }
@@ -205,17 +209,18 @@ impl Handle {
         Self { handle: raw }
     }
 
+    #[must_use]
     pub fn handle(&self, property: OneToOne) -> Handle {
         Handle::from_raw(unsafe { vhpi_handle(property as u32, self.as_raw()) })
     }
 
+    #[must_use]
     pub fn handle_by_name(&self, name: &str) -> Handle {
         let c_name = CString::new(name).unwrap();
-        Handle::from_raw(unsafe {
-            vhpi_handle_by_name(c_name.as_ptr() as *const i8, self.as_raw())
-        })
+        Handle::from_raw(unsafe { vhpi_handle_by_name(c_name.as_ptr(), self.as_raw()) })
     }
 
+    #[must_use]
     pub fn iterator(&self, typ: OneToMany) -> HandleIterator {
         let raw = unsafe { vhpi_iterator(typ as u32, self.as_raw()) };
         HandleIterator {
@@ -244,13 +249,13 @@ impl Iterator for HandleIterator {
     }
 }
 
+#[must_use]
 pub fn handle(property: OneToOne) -> Handle {
     Handle::from_raw(unsafe { vhpi_handle(property as u32, std::ptr::null_mut()) })
 }
 
+#[must_use]
 pub fn handle_by_name(name: &str) -> Handle {
     let c_name = CString::new(name).unwrap();
-    Handle::from_raw(unsafe {
-        vhpi_handle_by_name(c_name.as_ptr() as *const i8, std::ptr::null_mut())
-    })
+    Handle::from_raw(unsafe { vhpi_handle_by_name(c_name.as_ptr(), std::ptr::null_mut()) })
 }

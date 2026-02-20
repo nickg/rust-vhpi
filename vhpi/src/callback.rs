@@ -1,5 +1,5 @@
-use vhpi_sys::{vhpi_register_cb, vhpiCbDataS};
 use crate::Handle;
+use vhpi_sys::{vhpiCbDataS, vhpi_register_cb};
 
 #[repr(u32)]
 pub enum CbReason {
@@ -66,7 +66,7 @@ where
         return;
     }
 
-    let user_data = (*cb_data).user_data as *mut F;
+    let user_data = (*cb_data).user_data.cast::<F>();
     if user_data.is_null() {
         return;
     }
@@ -86,7 +86,7 @@ where
     F: Fn(&CbData) + 'static,
 {
     let boxed: Box<F> = Box::new(callback);
-    let user_data = Box::into_raw(boxed) as *mut std::os::raw::c_void;
+    let user_data = Box::into_raw(boxed).cast::<std::os::raw::c_void>();
 
     let mut cb_data = vhpiCbDataS {
         reason: reason as i32,
@@ -97,16 +97,16 @@ where
         user_data,
     };
 
-    Handle::from_raw(unsafe { vhpi_register_cb(&mut cb_data, 0) })
+    Handle::from_raw(unsafe { vhpi_register_cb(&raw mut cb_data, 0) })
 }
 
 impl Handle {
     pub fn register_cb<F>(&self, reason: CbReason, callback: F) -> Handle
-        where
+    where
         F: Fn(&CbData) + 'static,
     {
         let boxed: Box<F> = Box::new(callback);
-        let user_data = Box::into_raw(boxed) as *mut std::os::raw::c_void;
+        let user_data = Box::into_raw(boxed).cast::<std::os::raw::c_void>();
 
         let mut cb_data = vhpiCbDataS {
             reason: reason as i32,
@@ -117,6 +117,6 @@ impl Handle {
             user_data,
         };
 
-        Handle::from_raw(unsafe { vhpi_register_cb(&mut cb_data, 0) })
+        Handle::from_raw(unsafe { vhpi_register_cb(&raw mut cb_data, 0) })
     }
 }

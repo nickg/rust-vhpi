@@ -1,5 +1,5 @@
-use crate::Handle;
 use crate::Error;
+use crate::Handle;
 use crate::LogicVal;
 
 use std::ffi::CStr;
@@ -20,17 +20,17 @@ pub enum Value {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Value::BinStr(s) => write!(f, "{}", s),
-            Value::Int(n) => write!(f, "{}", n),
-            Value::Logic(n) => write!(f, "{}", n),
+            Value::BinStr(s) => write!(f, "{s}"),
+            Value::Int(n) => write!(f, "{n}"),
+            Value::Logic(n) => write!(f, "{n}"),
             Value::LogicVec(v) => {
-                for (_, val) in v.iter().enumerate() {
-                    write!(f, "{}", val)?;
+                for val in v {
+                    write!(f, "{val}")?;
                 }
                 Ok(())
             }
-            Value::SmallEnum(n) => write!(f, "{}", n),
-            Value::Enum(n) => write!(f, "{}", n),
+            Value::SmallEnum(n) => write!(f, "{n}"),
+            Value::Enum(n) => write!(f, "{n}"),
             Value::Unknown => write!(f, "?"),
         }
     }
@@ -85,12 +85,10 @@ impl Handle {
             bufSize: 0,
             numElems: 0,
             unit: vhpi_sys::vhpiPhysS { high: 0, low: 0 },
-            value: vhpi_sys::vhpiValueS__bindgen_ty_1 {
-                longintg: 0,
-            },
+            value: vhpi_sys::vhpiValueS__bindgen_ty_1 { longintg: 0 },
         };
 
-        let mut rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &mut val as *mut _) };
+        let mut rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &raw mut val) };
         let mut buffer: Vec<u8> = vec![];
 
         if rc > 0 {
@@ -109,42 +107,42 @@ impl Handle {
 
             match val.format {
                 vhpi_sys::vhpiFormatT_vhpiBinStrVal => {
-                    val.value.str_ = buffer.as_mut_ptr() as *mut vhpi_sys::vhpiCharT;
+                    val.value.str_ = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiCharT>();
                 }
                 vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
-                    val.value.enumvs = buffer.as_mut_ptr() as *mut vhpi_sys::vhpiEnumT;
+                    val.value.enumvs = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiEnumT>();
                 }
                 _ => {
                     panic!("unsupported vector format {}", val.format);
                 }
             }
 
-            rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &mut val as *mut _) };
+            rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &raw mut val) };
         }
 
         if rc < 0 {
-            return Err(crate::check_error().unwrap_or_else(
-                || "Unknown error in vhpi_get_value".into()));
+            return Err(
+                crate::check_error().unwrap_or_else(|| "Unknown error in vhpi_get_value".into())
+            );
         }
 
         match val.format {
-            vhpi_sys::vhpiFormatT_vhpiIntVal =>
-                Ok(Value::Int(unsafe { val.value.intg })),
-            vhpi_sys::vhpiFormatT_vhpiLogicVal =>
-                Ok(Value::Logic(LogicVal::from(unsafe { val.value.enumv as u8 }))),
-            vhpi_sys::vhpiFormatT_vhpiEnumVal =>
-                Ok(Value::Enum(unsafe { val.value.enumv })),
-            vhpi_sys::vhpiFormatT_vhpiSmallEnumVal =>
-                Ok(Value::SmallEnum(unsafe { val.value.smallenumv })),
+            vhpi_sys::vhpiFormatT_vhpiIntVal => Ok(Value::Int(unsafe { val.value.intg })),
+            vhpi_sys::vhpiFormatT_vhpiLogicVal => Ok(Value::Logic(LogicVal::from(unsafe {
+                val.value.enumv as u8
+            }))),
+            vhpi_sys::vhpiFormatT_vhpiEnumVal => Ok(Value::Enum(unsafe { val.value.enumv })),
+            vhpi_sys::vhpiFormatT_vhpiSmallEnumVal => {
+                Ok(Value::SmallEnum(unsafe { val.value.smallenumv }))
+            }
             vhpi_sys::vhpiFormatT_vhpiBinStrVal => {
                 let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
                 let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
                 Ok(Value::BinStr(rust_str.to_owned()))
             }
             vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
-                let slice = unsafe {
-                    std::slice::from_raw_parts(val.value.enumvs, val.numElems as usize)
-                };
+                let slice =
+                    unsafe { std::slice::from_raw_parts(val.value.enumvs, val.numElems as usize) };
                 let logic_vec: Vec<LogicVal> = slice
                     .iter()
                     .map(|&enumv| LogicVal::from(enumv as u8))

@@ -1,6 +1,6 @@
-use std::ffi::CStr;
-use vhpi_sys::{vhpi_get_str, vhpi_get};
 use num_derive::FromPrimitive;
+use std::ffi::CStr;
+use vhpi_sys::{vhpi_get, vhpi_get_str};
 
 use crate::Handle;
 
@@ -90,36 +90,41 @@ pub enum ClassKind {
 }
 
 impl ClassKind {
+    #[must_use]
     pub fn from_i32(value: i32) -> Option<ClassKind> {
         num::FromPrimitive::from_i32(value)
     }
 }
 
 impl Handle {
+    #[must_use]
     pub fn get(&self, property: IntProperty) -> i32 {
         unsafe { vhpi_get(property as u32, self.as_raw()) }
     }
 
+    #[must_use]
     pub fn get_str(&self, property: StrProperty) -> Option<String> {
         let ptr = unsafe { vhpi_get_str(property as u32, self.as_raw()) };
         if ptr.is_null() {
-            return None
+            return None;
         }
 
         unsafe {
-            CStr::from_ptr(ptr as *const i8)
+            CStr::from_ptr(ptr.cast::<i8>())
                 .to_str()
                 .ok()
-                .map(|s| s.to_owned())
+                .map(std::borrow::ToOwned::to_owned)
         }
     }
 
     // The following are convenience functions not defined by VHPI
 
+    #[must_use]
     pub fn get_kind(&self) -> ClassKind {
         ClassKind::from_i32(self.get(IntProperty::Kind)).unwrap()
     }
 
+    #[must_use]
     pub fn get_name(&self) -> String {
         self.get_str(StrProperty::Name).unwrap()
     }

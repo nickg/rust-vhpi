@@ -1,19 +1,19 @@
 #[macro_use]
 mod macros;
 
-mod handle;
 mod callback;
+mod error;
+mod handle;
+mod logic;
 mod property;
 mod value;
-mod error;
-mod logic;
 
-pub use handle::*;
 pub use callback::*;
+pub use error::*;
+pub use handle::*;
+pub use logic::*;
 pub use property::*;
 pub use value::*;
-pub use error::*;
-pub use logic::*;
 
 use std::ffi::CString;
 
@@ -22,7 +22,7 @@ extern crate num_derive;
 pub fn printf(msg: impl AsRef<str>) {
     let cstr = CString::new(msg.as_ref()).unwrap();
     static FMT: &[u8] = b"%s\n\0";
-    unsafe { vhpi_sys::vhpi_printf(FMT.as_ptr() as *const i8, cstr.as_ptr()) };
+    unsafe { vhpi_sys::vhpi_printf(FMT.as_ptr().cast::<i8>(), cstr.as_ptr()) };
 }
 
 #[macro_export]

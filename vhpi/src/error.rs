@@ -1,5 +1,5 @@
-use std::fmt;
 use std::ffi::CStr;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Severity {
@@ -49,7 +49,7 @@ impl fmt::Display for Severity {
             Severity::System => write!(f, "System"),
             Severity::Internal => write!(f, "Internal"),
             Severity::Failure => write!(f, "Failure"),
-            Severity::Unknown(n) => write!(f, "Unknown({})", n),
+            Severity::Unknown(n) => write!(f, "Unknown({n})"),
         }
     }
 }
@@ -87,6 +87,7 @@ impl From<&str> for Error {
     }
 }
 
+#[must_use]
 pub fn check_error() -> Option<Error> {
     let mut info = vhpi_sys::vhpiErrorInfoS {
         severity: vhpi_sys::vhpiSeverityT_vhpiNote,
@@ -96,21 +97,31 @@ pub fn check_error() -> Option<Error> {
         line: -1,
     };
 
-    let rc = unsafe { vhpi_sys::vhpi_check_error(&mut info as *mut _) };
+    let rc = unsafe { vhpi_sys::vhpi_check_error(&raw mut info) };
     if rc == 0 {
         return None;
     }
 
-    let message = unsafe { CStr::from_ptr(info.message) }.to_string_lossy().into_owned();
-    let context = if !info.str_.is_null() {
-        Some(unsafe { CStr::from_ptr(info.str_) }.to_string_lossy().into_owned())
-    } else {
+    let message = unsafe { CStr::from_ptr(info.message) }
+        .to_string_lossy()
+        .into_owned();
+    let context = if info.str_.is_null() {
         None
+    } else {
+        Some(
+            unsafe { CStr::from_ptr(info.str_) }
+                .to_string_lossy()
+                .into_owned(),
+        )
     };
-    let file = if !info.file.is_null() {
-        Some(unsafe { CStr::from_ptr(info.file) }.to_string_lossy().into_owned())
-    } else {
+    let file = if info.file.is_null() {
         None
+    } else {
+        Some(
+            unsafe { CStr::from_ptr(info.file) }
+                .to_string_lossy()
+                .into_owned(),
+        )
     };
 
     Some(Error {
