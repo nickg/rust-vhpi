@@ -15,15 +15,21 @@ jobs:
           version: latest
       - name: Build project
         run: cargo build
-      - name: Build VHDL code
+      - name: Build VHDL code - simple example
         run: |
           nvc -a test_examples/tb_simple.vhdl
           nvc -e tb_simple
-      - name: Run VHDL simulation
+      - name: Run VHDL simulation - simple example
         run: nvc -r tb_simple --load=target/debug/libdumper.so
-      - name: Build VHDL code
+      - name: Build VHDL code - string example
         run: |
           nvc -a test_examples/tb_string.vhdl
           nvc -e tb_string
-      - name: Run VHDL simulation
+      - name: Run VHDL simulation - string example
         run: nvc -r tb_string --load=target/debug/libdumper.so
+      - name: Build VHDL code - numeric array example
+        run: |
+          nvc -a test_examples/tb_arrays.vhdl
+          nvc -e tb_arrays
+      - name: Run VHDL simulation - numeric array example
+        run: nvc -r tb_arrays --load=target/debug/libdumper.so

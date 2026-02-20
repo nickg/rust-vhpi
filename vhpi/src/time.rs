@@ -19,8 +19,8 @@ impl From<i64> for Time {
 impl From<u32> for Time {
     fn from(value: u32) -> Self {
         Time {
-            low: value as u32,
-            high: 0 as i32,
+            low: value,
+            high: 0_i32,
         }
     }
 }
