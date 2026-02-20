@@ -35,29 +35,33 @@ impl From<vhpi_sys::vhpiTimeT> for Time {
 }
 
 impl Time {
+    #[must_use]
     pub fn to_i64(&self) -> i64 {
-        (self.high as i64) << 32 | (self.low as i64)
+        i64::from(self.high) << 32 | i64::from(self.low)
     }
 }
 
 impl Handle {
+    #[must_use]
     pub fn get_time(&self) -> Time {
         let mut time = vhpi_sys::vhpiTimeT { low: 0, high: 0 };
-        unsafe { vhpi_get_time(&mut time, std::ptr::null_mut()) };
+        unsafe { vhpi_get_time(&raw mut time, std::ptr::null_mut()) };
 
         time.into()
     }
 
+    #[must_use]
     pub fn get_cycles(&self) -> i64 {
         let mut cycles = 0;
-        unsafe { vhpi_get_time(std::ptr::null_mut(), &mut cycles) };
+        unsafe { vhpi_get_time(std::ptr::null_mut(), &raw mut cycles) };
 
         cycles
     }
 
+    #[must_use]
     pub fn get_next_time(&self) -> (Time, i32) {
         let mut time = vhpi_sys::vhpiTimeT { low: 0, high: 0 };
-        let result = unsafe { vhpi_sys::vhpi_get_next_time(&mut time) };
+        let result = unsafe { vhpi_sys::vhpi_get_next_time(&raw mut time) };
 
         (time.into(), result)
     }
