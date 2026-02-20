@@ -6,6 +6,7 @@ mod error;
 mod handle;
 mod logic;
 mod property;
+mod time;
 mod value;
 
 pub use callback::*;
@@ -13,6 +14,7 @@ pub use error::*;
 pub use handle::*;
 pub use logic::*;
 pub use property::*;
+pub use time::*;
 pub use value::*;
 
 use std::ffi::CString;

@@ -33,11 +33,19 @@ fn start_of_sim(_data: &vhpi::CbData) {
 }
 
 fn next_time_step(_data: &vhpi::CbData) {
-    vhpi::printf("next time step");
+    let handle = vhpi::handle(vhpi::OneToOne::RootInst);
+    let (time, status) = handle.get_next_time();
+    vhpi::printf!("next time step: {} (status: {status})", time.to_i64());
 }
 
 fn end_of_sim(_data: &vhpi::CbData) {
-    vhpi::printf("end of simulation");
+    let handle = vhpi::handle(vhpi::OneToOne::RootInst);
+    let time = handle.get_time().to_i64();
+    let cycles = handle.get_cycles();
+    vhpi::printf!(
+        "end of simulation at time {time} ({cycles} cycle{})",
+        if cycles == 1 { "" } else { "s" }
+    );
 }
 
 #[no_mangle]
