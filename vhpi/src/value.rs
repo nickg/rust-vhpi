@@ -9,11 +9,15 @@ use std::mem::size_of;
 #[derive(Debug)]
 pub enum Value {
     BinStr(String),
+    OctStr(String),
+    HexStr(String),
+    DecStr(String),
     Int(i32),
     Logic(LogicVal),
     LogicVec(Vec<LogicVal>),
     SmallEnum(u8),
     Enum(u32),
+    Str(String),
     Unknown,
 }
 
@@ -21,6 +25,9 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::BinStr(s) => write!(f, "{s}"),
+            Value::OctStr(s) => write!(f, "{s}"),
+            Value::HexStr(s) => write!(f, "{s}"),
+            Value::DecStr(s) => write!(f, "{s}"),
             Value::Int(n) => write!(f, "{n}"),
             Value::Logic(n) => write!(f, "{n}"),
             Value::LogicVec(v) => {
@@ -31,6 +38,7 @@ impl fmt::Display for Value {
             }
             Value::SmallEnum(n) => write!(f, "{n}"),
             Value::Enum(n) => write!(f, "{n}"),
+            Value::Str(s) => write!(f, "{s}"),
             Value::Unknown => write!(f, "?"),
         }
     }
@@ -40,11 +48,15 @@ impl fmt::Display for Value {
 pub enum Format {
     ObjType,
     BinStr,
+    OctStr,
+    HexStr,
+    DecStr,
     Int,
     Logic,
     LogicVec,
     SmallEnum,
     Enum,
+    Str,
     Unknown(u32),
 }
 
@@ -53,11 +65,15 @@ impl From<vhpi_sys::vhpiSeverityT> for Format {
         match raw {
             vhpi_sys::vhpiFormatT_vhpiObjTypeVal => Format::ObjType,
             vhpi_sys::vhpiFormatT_vhpiBinStrVal => Format::BinStr,
+            vhpi_sys::vhpiFormatT_vhpiOctStrVal => Format::OctStr,
+            vhpi_sys::vhpiFormatT_vhpiHexStrVal => Format::HexStr,
+            vhpi_sys::vhpiFormatT_vhpiDecStrVal => Format::DecStr,
             vhpi_sys::vhpiFormatT_vhpiIntVal => Format::Int,
             vhpi_sys::vhpiFormatT_vhpiLogicVal => Format::Logic,
             vhpi_sys::vhpiFormatT_vhpiLogicVecVal => Format::LogicVec,
             vhpi_sys::vhpiFormatT_vhpiSmallEnumVal => Format::SmallEnum,
             vhpi_sys::vhpiFormatT_vhpiEnumVal => Format::Enum,
+            vhpi_sys::vhpiFormatT_vhpiStrVal => Format::Str,
             other => Format::Unknown(other),
         }
     }
@@ -68,11 +84,15 @@ impl From<Format> for vhpi_sys::vhpiFormatT {
         match format {
             Format::ObjType => vhpi_sys::vhpiFormatT_vhpiObjTypeVal,
             Format::BinStr => vhpi_sys::vhpiFormatT_vhpiBinStrVal,
+            Format::OctStr => vhpi_sys::vhpiFormatT_vhpiOctStrVal,
+            Format::HexStr => vhpi_sys::vhpiFormatT_vhpiHexStrVal,
+            Format::DecStr => vhpi_sys::vhpiFormatT_vhpiDecStrVal,
             Format::Int => vhpi_sys::vhpiFormatT_vhpiIntVal,
             Format::Logic => vhpi_sys::vhpiFormatT_vhpiLogicVal,
             Format::LogicVec => vhpi_sys::vhpiFormatT_vhpiLogicVecVal,
             Format::SmallEnum => vhpi_sys::vhpiFormatT_vhpiSmallEnumVal,
             Format::Enum => vhpi_sys::vhpiFormatT_vhpiEnumVal,
+            Format::Str => vhpi_sys::vhpiFormatT_vhpiStrVal,
             Format::Unknown(n) => n,
         }
     }
@@ -98,6 +118,7 @@ impl Handle {
                 vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
                     rc as usize * size_of::<vhpi_sys::vhpiEnumT>()
                 }
+                vhpi_sys::vhpiFormatT_vhpiStrVal => rc as usize,
                 _ => {
                     panic!("unsupported vector format {}", val.format);
                 }
@@ -106,7 +127,11 @@ impl Handle {
             val.bufSize = buf_size;
 
             match val.format {
-                vhpi_sys::vhpiFormatT_vhpiBinStrVal => {
+                vhpi_sys::vhpiFormatT_vhpiBinStrVal
+                | vhpi_sys::vhpiFormatT_vhpiStrVal
+                | vhpi_sys::vhpiFormatT_vhpiOctStrVal
+                | vhpi_sys::vhpiFormatT_vhpiHexStrVal
+                | vhpi_sys::vhpiFormatT_vhpiDecStrVal => {
                     val.value.str_ = buffer.as_mut_ptr().cast::<vhpi_sys::vhpiCharT>();
                 }
                 vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
@@ -139,6 +164,26 @@ impl Handle {
                 let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
                 let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
                 Ok(Value::BinStr(rust_str.to_owned()))
+            }
+            vhpi_sys::vhpiFormatT_vhpiOctStrVal => {
+                let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
+                let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
+                Ok(Value::OctStr(rust_str.to_owned()))
+            }
+            vhpi_sys::vhpiFormatT_vhpiHexStrVal => {
+                let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
+                let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
+                Ok(Value::HexStr(rust_str.to_owned()))
+            }
+            vhpi_sys::vhpiFormatT_vhpiDecStrVal => {
+                let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
+                let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
+                Ok(Value::DecStr(rust_str.to_owned()))
+            }
+            vhpi_sys::vhpiFormatT_vhpiStrVal => {
+                let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
+                let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
+                Ok(Value::Str(rust_str.to_owned()))
             }
             vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
                 let slice =

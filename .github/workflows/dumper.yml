@@ -21,3 +21,9 @@ jobs:
           nvc -e tb_simple
       - name: Run VHDL simulation
         run: nvc -r tb_simple --load=target/debug/libdumper.so
+      - name: Build VHDL code
+        run: |
+          nvc -a test_examples/tb_string.vhdl
+          nvc -e tb_string
+      - name: Run VHDL simulation
+        run: nvc -r tb_string --load=target/debug/libdumper.so
