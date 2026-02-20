@@ -1,5 +1,5 @@
-use std::fmt;
 use std::ffi::CStr;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Severity {
@@ -101,14 +101,24 @@ pub fn check_error() -> Option<Error> {
         return None;
     }
 
-    let message = unsafe { CStr::from_ptr(info.message) }.to_string_lossy().into_owned();
+    let message = unsafe { CStr::from_ptr(info.message) }
+        .to_string_lossy()
+        .into_owned();
     let context = if !info.str_.is_null() {
-        Some(unsafe { CStr::from_ptr(info.str_) }.to_string_lossy().into_owned())
+        Some(
+            unsafe { CStr::from_ptr(info.str_) }
+                .to_string_lossy()
+                .into_owned(),
+        )
     } else {
         None
     };
     let file = if !info.file.is_null() {
-        Some(unsafe { CStr::from_ptr(info.file) }.to_string_lossy().into_owned())
+        Some(
+            unsafe { CStr::from_ptr(info.file) }
+                .to_string_lossy()
+                .into_owned(),
+        )
     } else {
         None
     };

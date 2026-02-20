@@ -1,6 +1,6 @@
-use std::ffi::CStr;
-use vhpi_sys::{vhpi_get_str, vhpi_get};
 use num_derive::FromPrimitive;
+use std::ffi::CStr;
+use vhpi_sys::{vhpi_get, vhpi_get_str};
 
 use crate::Handle;
 
@@ -103,7 +103,7 @@ impl Handle {
     pub fn get_str(&self, property: StrProperty) -> Option<String> {
         let ptr = unsafe { vhpi_get_str(property as u32, self.as_raw()) };
         if ptr.is_null() {
-            return None
+            return None;
         }
 
         unsafe {

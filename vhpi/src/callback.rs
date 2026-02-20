@@ -1,5 +1,5 @@
-use vhpi_sys::{vhpi_register_cb, vhpiCbDataS};
 use crate::Handle;
+use vhpi_sys::{vhpiCbDataS, vhpi_register_cb};
 
 #[repr(u32)]
 pub enum CbReason {
@@ -102,7 +102,7 @@ where
 
 impl Handle {
     pub fn register_cb<F>(&self, reason: CbReason, callback: F) -> Handle
-        where
+    where
         F: Fn(&CbData) + 'static,
     {
         let boxed: Box<F> = Box::new(callback);
