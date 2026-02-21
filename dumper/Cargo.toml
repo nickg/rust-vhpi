@@ -1,11 +1,14 @@
 [package]
 name = "dumper"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "A simple VHPI dumper for debugging and exploration."
+repository.workspace = true
 publish = false
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-vhpi = { path = "../vhpi" }
+vhpi.workspace = true

@@ -92,7 +92,7 @@ pub enum ClassKind {
 impl ClassKind {
     #[must_use]
     pub fn from_i32(value: i32) -> Option<ClassKind> {
-        num::FromPrimitive::from_i32(value)
+        num_traits::FromPrimitive::from_i32(value)
     }
 }
 
