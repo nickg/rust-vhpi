@@ -6,7 +6,9 @@ mod control;
 mod error;
 mod handle;
 mod logic;
+mod physical;
 mod property;
+mod simulator;
 mod time;
 mod value;
 
@@ -15,7 +17,9 @@ pub use control::*;
 pub use error::*;
 pub use handle::*;
 pub use logic::*;
+pub use physical::*;
 pub use property::*;
+pub use simulator::*;
 pub use time::*;
 pub use value::*;
 

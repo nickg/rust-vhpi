@@ -1,7 +1,7 @@
 use std::ffi::CString;
 use vhpi_sys::{
-    vhpiHandleT, vhpi_compare_handles, vhpi_handle, vhpi_handle_by_name, vhpi_iterator,
-    vhpi_release_handle, vhpi_scan,
+    vhpiHandleT, vhpi_compare_handles, vhpi_handle, vhpi_handle_by_index, vhpi_handle_by_name,
+    vhpi_iterator, vhpi_release_handle, vhpi_scan,
 };
 
 #[repr(u32)]
@@ -157,7 +157,7 @@ pub struct Handle {
 }
 
 pub struct HandleIterator {
-    iter: Handle,
+    pub(crate) iter: Handle,
 }
 
 impl Drop for Handle {
@@ -218,6 +218,17 @@ impl Handle {
     pub fn handle_by_name(&self, name: &str) -> Handle {
         let c_name = CString::new(name).unwrap();
         Handle::from_raw(unsafe { vhpi_handle_by_name(c_name.as_ptr(), self.as_raw()) })
+    }
+
+    #[must_use]
+    pub fn handle_by_index(&self, index: i32) -> Handle {
+        Handle::from_raw(unsafe {
+            vhpi_handle_by_index(
+                vhpi_sys::vhpiOneToManyT_vhpiIndexedNames,
+                self.as_raw(),
+                index,
+            )
+        })
     }
 
     #[must_use]
