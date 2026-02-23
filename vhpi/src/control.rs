@@ -22,7 +22,7 @@ impl From<vhpi_sys::vhpiSimControlT> for Control {
             vhpi_sys::vhpiSimControlT_vhpiStop => Control::Stop,
             vhpi_sys::vhpiSimControlT_vhpiFinish => Control::Finish,
             vhpi_sys::vhpiSimControlT_vhpiReset => Control::Reset,
-            _ => panic!("Unknown control value: {}", raw),
+            _ => panic!("Unknown control value: {raw}"),
         }
     }
 }
@@ -37,11 +37,12 @@ impl From<i32> for ControlReturn {
         match raw {
             0 => ControlReturn::Success,
             1 => ControlReturn::Failure,
-            _ => panic!("Unknown control return value: {}", raw),
+            _ => panic!("Unknown control return value: {raw}"),
         }
     }
 }
 impl Handle {
+    #[must_use]
     pub fn control(&self, control: Control) -> ControlReturn {
         let result = unsafe { vhpi_sys::vhpi_control(control.into()) };
         result.into()

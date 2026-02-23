@@ -132,3 +132,8 @@ pub fn check_error() -> Option<Error> {
         context,
     })
 }
+
+pub fn assert(severity: Severity, message: &str) {
+    let c_message = std::ffi::CString::new(message).unwrap();
+    unsafe { vhpi_sys::vhpi_assert(severity.into(), c_message.as_ptr().cast_mut()) };
+}

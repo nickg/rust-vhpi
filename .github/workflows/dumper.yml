@@ -33,3 +33,21 @@ jobs:
           nvc -e tb_arrays
       - name: Run VHDL simulation - numeric array example
         run: nvc -r tb_arrays --load=target/debug/libdumper.so
+      - name: Build VHDL code - enum example
+        run: |
+          nvc -a test_examples/tb_enums.vhdl
+          nvc -e tb_enums
+      - name: Run VHDL simulation - enum example
+        run: nvc -r tb_enums --load=target/debug/libdumper.so
+      - name: Build VHDL code - physical time example
+        run: |
+          nvc -a test_examples/tb_physical_time.vhdl
+          nvc -e tb_physical_time
+      - name: Run VHDL simulation - physical time example
+        run: nvc -r tb_physical_time --load=target/debug/libdumper.so
+      - name: Build VHDL code - complex example
+        run: |
+          nvc -a test_examples/tb_complex.vhdl
+          nvc -e tb_complex
+      - name: Run VHDL simulation - complex example
+        run: nvc -r tb_complex --load=target/debug/libdumper.so

@@ -1,4 +1,4 @@
-use crate::Handle;
+use crate::{check_error, Error, Handle};
 use vhpi_sys::{vhpiCbDataS, vhpi_register_cb};
 
 #[repr(u32)]
@@ -58,6 +58,12 @@ pub struct CbData {
     pub obj: Handle,
 }
 
+#[derive(Debug)]
+pub enum RegisterCbError {
+    UnknownReason,
+    Error(Error),
+}
+
 unsafe extern "C" fn trampoline<F>(cb_data: *const vhpi_sys::vhpiCbDataS)
 where
     F: Fn(&CbData),
@@ -81,7 +87,7 @@ where
     data.obj.clear(); // We do not own this handle
 }
 
-pub fn register_cb<F>(reason: CbReason, callback: F) -> Handle
+pub fn register_cb<F>(reason: CbReason, callback: F) -> Result<Handle, RegisterCbError>
 where
     F: Fn(&CbData) + 'static,
 {
@@ -96,12 +102,22 @@ where
         value: std::ptr::null_mut(),
         user_data,
     };
-
-    Handle::from_raw(unsafe { vhpi_register_cb(&raw mut cb_data, 0) })
+    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, 0) };
+    if ret.is_null() {
+        unsafe {
+            drop(Box::from_raw(user_data.cast::<F>()));
+        }
+        check_error().map_or_else(
+            || Err(RegisterCbError::UnknownReason),
+            |err| Err(RegisterCbError::Error(err)),
+        )
+    } else {
+        Ok(Handle::from_raw(ret))
+    }
 }
 
 impl Handle {
-    pub fn register_cb<F>(&self, reason: CbReason, callback: F) -> Handle
+    pub fn register_cb<F>(&self, reason: CbReason, callback: F) -> Result<Handle, RegisterCbError>
     where
         F: Fn(&CbData) + 'static,
     {
@@ -116,7 +132,17 @@ impl Handle {
             value: std::ptr::null_mut(),
             user_data,
         };
-
-        Handle::from_raw(unsafe { vhpi_register_cb(&raw mut cb_data, 0) })
+        let ret = unsafe { vhpi_register_cb(&raw mut cb_data, 0) };
+        if ret.is_null() {
+            unsafe {
+                drop(Box::from_raw(user_data.cast::<F>()));
+            }
+            check_error().map_or_else(
+                || Err(RegisterCbError::UnknownReason),
+                |err| Err(RegisterCbError::Error(err)),
+            )
+        } else {
+            Ok(Handle::from_raw(ret))
+        }
     }
 }

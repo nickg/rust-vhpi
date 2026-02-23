@@ -13,5 +13,6 @@ rust-version = "1.82"
 vhpi = {path = "vhpi"}
 vhpi-sys = {path = "vhpi-sys"}
 bindgen = "0.72"
+bitflags = "2.11"
 num-derive = "0.4"
 num-traits = "0.2"

@@ -32,6 +32,23 @@ impl From<u8> for LogicVal {
     }
 }
 
+impl From<LogicVal> for vhpi_sys::vhpiEnumT {
+    fn from(logic: LogicVal) -> Self {
+        match logic {
+            LogicVal::U => vhpi_sys::vhpiU,
+            LogicVal::X => vhpi_sys::vhpiX,
+            LogicVal::Zero => vhpi_sys::vhpi0,
+            LogicVal::One => vhpi_sys::vhpi1,
+            LogicVal::Z => vhpi_sys::vhpiZ,
+            LogicVal::W => vhpi_sys::vhpiW,
+            LogicVal::L => vhpi_sys::vhpiL,
+            LogicVal::H => vhpi_sys::vhpiH,
+            LogicVal::DontCare => vhpi_sys::vhpiDontCare,
+            LogicVal::Unknown(v) => vhpi_sys::vhpiEnumT::from(v),
+        }
+    }
+}
+
 impl TryFrom<char> for LogicVal {
     type Error = ();
 
