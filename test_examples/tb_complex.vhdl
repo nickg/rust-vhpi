@@ -23,7 +23,7 @@ architecture sim of tb_complex is
   signal v_slv_1d : slv_1d_t(0 to 2) := ((others => '0'), (others => '0'), (others => '0'));
   signal v_slv_2d : slv_2d_t(0 to 1, 0 to 1) := (("0000", "0000"), ("0000", "0000"));
   signal v_record : data_record_t := (value => 0, status => '0', data => x"00");
-  signal v_record_arr : record_array_t(0 to 1) := ((0, '0', x"00"), (0, '0', x"00"));
+  signal v_record_arr : record_array_t(1 downto 0) := ((0, '0', x"00"), (0, '0', x"00"));
 begin
   stim : process
   begin

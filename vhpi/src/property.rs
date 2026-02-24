@@ -2,7 +2,7 @@ use num_derive::FromPrimitive;
 use std::ffi::CStr;
 use vhpi_sys::{vhpi_get, vhpi_get_str, vhpi_iterator, vhpi_scan};
 
-use crate::{Handle, Physical};
+use crate::{iso8859_1_cstr_to_string, Handle, Physical};
 
 #[repr(u32)]
 pub enum StrProperty {
@@ -53,7 +53,29 @@ pub enum IntProperty {
     IsForeign = vhpi_sys::vhpiIntPropertyT_vhpiIsForeignP,
     IsGuarded = vhpi_sys::vhpiIntPropertyT_vhpiIsGuardedP,
     IsImplicitDecl = vhpi_sys::vhpiIntPropertyT_vhpiIsImplicitDeclP,
+    IsLocal = vhpi_sys::vhpiIntPropertyT_vhpiIsLocalP,
+    IsNamed = vhpi_sys::vhpiIntPropertyT_vhpiIsNamedP,
+    IsNull = vhpi_sys::vhpiIntPropertyT_vhpiIsNullP,
+    IsOpen = vhpi_sys::vhpiIntPropertyT_vhpiIsOpenP,
+    IsPLI = vhpi_sys::vhpiIntPropertyT_vhpiIsPLIP,
+    IsPassive = vhpi_sys::vhpiIntPropertyT_vhpiIsPassiveP,
+    IsPostponed = vhpi_sys::vhpiIntPropertyT_vhpiIsPostponedP,
+    IsProtectedType = vhpi_sys::vhpiIntPropertyT_vhpiIsProtectedTypeP,
+    IsPure = vhpi_sys::vhpiIntPropertyT_vhpiIsPureP,
+    IsResolved = vhpi_sys::vhpiIntPropertyT_vhpiIsResolvedP,
+    IsScalar = vhpi_sys::vhpiIntPropertyT_vhpiIsScalarP,
+    IsSeqStmt = vhpi_sys::vhpiIntPropertyT_vhpiIsSeqStmtP,
+    IsShared = vhpi_sys::vhpiIntPropertyT_vhpiIsSharedP,
+    IsTransport = vhpi_sys::vhpiIntPropertyT_vhpiIsTransportP,
+    IsUnaffected = vhpi_sys::vhpiIntPropertyT_vhpiIsUnaffectedP,
+    IsUnconstrained = vhpi_sys::vhpiIntPropertyT_vhpiIsUnconstrainedP,
+    IsUninstantiated = vhpi_sys::vhpiIntPropertyT_vhpiIsUninstantiatedP,
+    IsUp = vhpi_sys::vhpiIntPropertyT_vhpiIsUpP,
+    IsVital = vhpi_sys::vhpiIntPropertyT_vhpiIsVitalP,
+    IteratorType = vhpi_sys::vhpiIntPropertyT_vhpiIteratorTypeP,
     LeftBound = vhpi_sys::vhpiIntPropertyT_vhpiLeftBoundP,
+    LineNo = vhpi_sys::vhpiIntPropertyT_vhpiLineNoP,
+    LineOffset = vhpi_sys::vhpiIntPropertyT_vhpiLineOffsetP,
     LoopIndex = vhpi_sys::vhpiIntPropertyT_vhpiLoopIndexP,
     Mode = vhpi_sys::vhpiIntPropertyT_vhpiModeP,
     NumDimensions = vhpi_sys::vhpiIntPropertyT_vhpiNumDimensionsP,
@@ -242,12 +264,8 @@ impl Handle {
             return None;
         }
 
-        unsafe {
-            CStr::from_ptr(ptr.cast::<i8>())
-                .to_str()
-                .ok()
-                .map(std::borrow::ToOwned::to_owned)
-        }
+        let cstr = unsafe { CStr::from_ptr(ptr.cast::<i8>()) };
+        Some(iso8859_1_cstr_to_string(cstr))
     }
 
     #[must_use]
@@ -275,19 +293,21 @@ impl Handle {
     }
 
     #[must_use]
+    pub fn get_full_name(&self) -> String {
+        self.get_str(StrProperty::FullName).unwrap()
+    }
+
+    #[must_use]
     pub fn index_range(&self) -> Box<dyn Iterator<Item = i32>> {
         let raw = unsafe { vhpi_iterator(crate::OneToMany::Constraints as u32, self.as_raw()) };
         let handle = Handle::from_raw(unsafe { vhpi_scan(raw) });
-        let size = handle.get(IntProperty::Size);
-        if size == 0 {
-            return Box::new(std::iter::empty());
-        }
+        let is_up = handle.get(IntProperty::IsUp);
         let left = handle.get(IntProperty::LeftBound);
         let right = handle.get(IntProperty::RightBound);
-        if left <= right {
-            return Box::new(left..=right);
+        if is_up == 0 {
+            return Box::new((right..=left).rev());
         }
-        Box::new((right..=left).rev())
+        Box::new(left..=right)
     }
 
     #[must_use]

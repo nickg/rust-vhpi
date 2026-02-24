@@ -1,5 +1,6 @@
 fn value_change(data: &vhpi::CbData) {
-    match data.obj.get_value(vhpi::Format::ObjType) {
+    let val = data.obj.get_value(vhpi::Format::ObjType);
+    match val {
         Ok(value) => {
             let full_name = data.obj.get_str(vhpi::StrProperty::FullName).unwrap();
             vhpi::printf!("value change {} => {}", full_name, value);

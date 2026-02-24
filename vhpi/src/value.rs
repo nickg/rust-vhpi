@@ -1,10 +1,10 @@
+use crate::iso8859_1_val_to_string;
 use crate::Error;
 use crate::Handle;
 use crate::LogicVal;
 use crate::Physical;
 use crate::Time;
 
-use std::ffi::CStr;
 use std::fmt;
 use std::mem::size_of;
 
@@ -101,13 +101,13 @@ impl fmt::Display for Value {
                 )?;
                 Ok(())
             }
-            Value::Time(t) => write!(f, "{}", t.to_i64()),
+            Value::Time(t) => write!(f, "{t}"),
             Value::TimeVec(v) => {
                 write!(
                     f,
                     "[{}]",
                     v.iter()
-                        .map(|t| t.to_i64().to_string())
+                        .map(std::string::ToString::to_string)
                         .collect::<Vec<_>>()
                         .join(", ")
                 )?;
@@ -411,31 +411,11 @@ impl Handle {
             }
             vhpi_sys::vhpiFormatT_vhpiRealVal => Ok(Value::Real(unsafe { val.value.real })),
             vhpi_sys::vhpiFormatT_vhpiCharVal => Ok(Value::Char(unsafe { val.value.ch as char })),
-            vhpi_sys::vhpiFormatT_vhpiBinStrVal => {
-                let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
-                let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
-                Ok(Value::BinStr(rust_str.to_owned()))
-            }
-            vhpi_sys::vhpiFormatT_vhpiOctStrVal => {
-                let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
-                let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
-                Ok(Value::OctStr(rust_str.to_owned()))
-            }
-            vhpi_sys::vhpiFormatT_vhpiHexStrVal => {
-                let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
-                let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
-                Ok(Value::HexStr(rust_str.to_owned()))
-            }
-            vhpi_sys::vhpiFormatT_vhpiDecStrVal => {
-                let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
-                let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
-                Ok(Value::DecStr(rust_str.to_owned()))
-            }
-            vhpi_sys::vhpiFormatT_vhpiStrVal => {
-                let cstr = unsafe { CStr::from_ptr(val.value.str_ as *const i8) };
-                let rust_str = cstr.to_str().map_err(|_| "Invalid UTF-8 in VHPI string")?;
-                Ok(Value::Str(rust_str.to_owned()))
-            }
+            vhpi_sys::vhpiFormatT_vhpiBinStrVal => Ok(Value::BinStr(iso8859_1_val_to_string(&val))),
+            vhpi_sys::vhpiFormatT_vhpiOctStrVal => Ok(Value::OctStr(iso8859_1_val_to_string(&val))),
+            vhpi_sys::vhpiFormatT_vhpiHexStrVal => Ok(Value::HexStr(iso8859_1_val_to_string(&val))),
+            vhpi_sys::vhpiFormatT_vhpiDecStrVal => Ok(Value::DecStr(iso8859_1_val_to_string(&val))),
+            vhpi_sys::vhpiFormatT_vhpiStrVal => Ok(Value::Str(iso8859_1_val_to_string(&val))),
             vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
                 let slice =
                     unsafe { std::slice::from_raw_parts(val.value.enumvs, val.numElems as usize) };
