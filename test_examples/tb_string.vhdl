@@ -20,7 +20,7 @@ begin
     v_char <= 'T';
     wait for 10 ns;
 
-    v_str <= "VHDL Works";
+    v_str <= "VHDL Wörks";
     v_char <= 'V';
     wait for 10 ns;
 

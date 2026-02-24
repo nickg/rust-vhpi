@@ -23,7 +23,7 @@ pub use simulator::*;
 pub use time::*;
 pub use value::*;
 
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 
 extern crate num_derive;
 
@@ -51,4 +51,18 @@ macro_rules! printf {
     ($($arg:tt)*) => {{
         $crate::printf(&format!($($arg)*));
     }}
+}
+
+/// Convert ISO-8859-1 encoded C string from vhpiValueS to Rust String
+fn iso8859_1_val_to_string(value: &vhpi_sys::vhpiValueS) -> String {
+    let cstr = unsafe { CStr::from_ptr(value.value.str_ as *const i8) };
+    iso8859_1_cstr_to_string(cstr)
+}
+
+/// Convert ISO-8859-1 encoded C string to Rust String
+fn iso8859_1_cstr_to_string(cstr: &CStr) -> String {
+    cstr.to_bytes()
+        .iter()
+        .map(|&b| char::from_u32(u32::from(b)).unwrap())
+        .collect::<String>()
 }
