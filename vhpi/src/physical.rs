@@ -46,3 +46,42 @@ impl Physical {
         i64::from(self.high) << 32 | i64::from(self.low)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn physical_from_i64_round_trips_positive_and_negative_values() {
+        let positive = 0x1234_5678_9ABC_DEF0_i64;
+        let negative = -123_456_789_i64;
+
+        assert_eq!(Physical::from(positive).to_i64(), positive);
+        assert_eq!(Physical::from(negative).to_i64(), negative);
+    }
+
+    #[test]
+    fn physical_from_u32_sets_high_to_zero() {
+        let phys = Physical::from(0xDEAD_BEEF_u32);
+
+        assert_eq!(phys.low, 0xDEAD_BEEF);
+        assert_eq!(phys.high, 0);
+        assert_eq!(phys.to_i64(), 0x0000_0000_DEAD_BEEF_i64);
+    }
+
+    #[test]
+    fn physical_converts_to_and_from_raw_vhpi_phys() {
+        let raw = vhpi_sys::vhpiPhysT {
+            low: 0x89AB_CDEF,
+            high: 0x0123_4567,
+        };
+
+        let phys = Physical::from(raw);
+        assert_eq!(phys.low, 0x89AB_CDEF);
+        assert_eq!(phys.high, 0x0123_4567);
+
+        let raw_round_trip: vhpi_sys::vhpiPhysT = phys.into();
+        assert_eq!(raw_round_trip.low, 0x89AB_CDEF);
+        assert_eq!(raw_round_trip.high, 0x0123_4567);
+    }
+}
