@@ -54,14 +54,14 @@ impl TryFrom<char> for LogicVal {
 
     fn try_from(c: char) -> Result<Self, Self::Error> {
         match c {
-            'U' => Ok(LogicVal::U),
-            'X' => Ok(LogicVal::X),
+            'U' | 'u' => Ok(LogicVal::U),
+            'X' | 'x' => Ok(LogicVal::X),
             '0' => Ok(LogicVal::Zero),
             '1' => Ok(LogicVal::One),
-            'Z' => Ok(LogicVal::Z),
-            'W' => Ok(LogicVal::W),
-            'L' => Ok(LogicVal::L),
-            'H' => Ok(LogicVal::H),
+            'Z' | 'z' => Ok(LogicVal::Z),
+            'W' | 'w' => Ok(LogicVal::W),
+            'L' | 'l' => Ok(LogicVal::L),
+            'H' | 'h' => Ok(LogicVal::H),
             '-' => Ok(LogicVal::DontCare),
             _ => Err(()),
         }

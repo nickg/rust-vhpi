@@ -1,6 +1,6 @@
 use crate::Physical;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Time {
     pub low: u32,
     pub high: i32,

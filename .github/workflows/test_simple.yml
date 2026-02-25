@@ -1,4 +1,4 @@
-name: Run tests
+name: Run test_simple example
 on: [push, pull_request]
 
 jobs:
@@ -7,6 +7,7 @@ jobs:
       matrix:
         # Final value should correspond to rust-version in Cargo.toml
         toolchain: ["stable", "nightly", "1.82"]
+        nvc: ["latest"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -14,11 +15,9 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1.15.2
         with:
           toolchain:  ${{ matrix.toolchain }}
-      - name: Display versions
+      - uses: nickg/setup-nvc@v1
+        with:
+          version: ${{ matrix.nvc }}
+      - name: Run test_simple against tb_simple
         run: |
-          cargo -V
-          rustc -V
-      - name: Run tests
-        run: cargo test
-      - name: Run tests with bigint feature
-        run: cargo test --features bigint
+          ./scripts/run_test_simple.sh

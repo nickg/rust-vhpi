@@ -58,6 +58,14 @@ pub struct CbData {
     pub obj: Handle,
 }
 
+struct AfterDelayCbState<F>
+where
+    F: Fn(&CbData),
+{
+    callback: F,
+    time: vhpi_sys::vhpiTimeT,
+}
+
 #[derive(Debug)]
 pub enum RegisterCbError {
     UnknownReason,
@@ -87,6 +95,30 @@ where
     data.obj.clear(); // We do not own this handle
 }
 
+unsafe extern "C" fn after_delay_trampoline<F>(cb_data: *const vhpi_sys::vhpiCbDataS)
+where
+    F: Fn(&CbData),
+{
+    if cb_data.is_null() {
+        return;
+    }
+
+    let user_data = (*cb_data).user_data.cast::<AfterDelayCbState<F>>();
+    if user_data.is_null() {
+        return;
+    }
+
+    let mut data = CbData {
+        obj: Handle::from_raw((*cb_data).obj),
+    };
+
+    ((*user_data).callback)(&data);
+
+    data.obj.clear(); // We do not own this handle
+
+    drop(Box::from_raw(user_data));
+}
+
 pub fn register_cb<F>(reason: CbReason, callback: F) -> Result<Handle, RegisterCbError>
 where
     F: Fn(&CbData) + 'static,
@@ -102,17 +134,47 @@ where
         value: std::ptr::null_mut(),
         user_data,
     };
-    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, 0) };
-    if ret.is_null() {
-        unsafe {
-            drop(Box::from_raw(user_data.cast::<F>()));
+    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
+    match check_error() {
+        Some(err) => {
+            unsafe {
+                drop(Box::from_raw(user_data.cast::<F>()));
+            }
+            Err(RegisterCbError::Error(err))
         }
-        check_error().map_or_else(
-            || Err(RegisterCbError::UnknownReason),
-            |err| Err(RegisterCbError::Error(err)),
-        )
-    } else {
-        Ok(Handle::from_raw(ret))
+        None => Ok(Handle::from_raw(ret)),
+    }
+}
+
+pub fn register_cb_after_delay<F>(
+    delay: crate::Time,
+    callback: F,
+) -> Result<Handle, RegisterCbError>
+where
+    F: Fn(&CbData) + 'static,
+{
+    let boxed = Box::new(AfterDelayCbState {
+        callback,
+        time: delay.into(),
+    });
+    let user_data = Box::into_raw(boxed);
+    let mut cb_data = vhpiCbDataS {
+        reason: CbReason::AfterDelay as i32,
+        cb_rtn: Some(after_delay_trampoline::<F>),
+        obj: std::ptr::null_mut(),
+        time: unsafe { &raw mut (*user_data).time },
+        value: std::ptr::null_mut(),
+        user_data: user_data.cast::<std::os::raw::c_void>(),
+    };
+    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
+    match check_error() {
+        Some(err) => {
+            unsafe {
+                drop(Box::from_raw(user_data.cast::<AfterDelayCbState<F>>()));
+            }
+            Err(RegisterCbError::Error(err))
+        }
+        None => Ok(Handle::from_raw(ret)),
     }
 }
 
