@@ -108,3 +108,60 @@ pub fn get_next_time() -> (Time, i32) {
 
     (time.into(), result)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn time_from_i64_round_trips_positive_and_negative_values() {
+        let positive = 0x1234_5678_9ABC_DEF0_i64;
+        let negative = -42_i64;
+
+        assert_eq!(Time::from(positive).to_i64(), positive);
+        assert_eq!(Time::from(negative).to_i64(), negative);
+    }
+
+    #[test]
+    fn time_from_u32_sets_high_to_zero() {
+        let time = Time::from(0xDEAD_BEEF_u32);
+
+        assert_eq!(time.low, 0xDEAD_BEEF);
+        assert_eq!(time.high, 0);
+        assert_eq!(time.to_i64(), 0x0000_0000_DEAD_BEEF_i64);
+    }
+
+    #[test]
+    fn time_converts_to_and_from_raw_vhpi_time() {
+        let raw = vhpi_sys::vhpiTimeT {
+            low: 0x89AB_CDEF,
+            high: 0x0123_4567,
+        };
+
+        let time = Time::from(raw);
+        assert_eq!(time.low, 0x89AB_CDEF);
+        assert_eq!(time.high, 0x0123_4567);
+
+        let raw_round_trip: vhpi_sys::vhpiTimeT = time.into();
+        assert_eq!(raw_round_trip.low, 0x89AB_CDEF);
+        assert_eq!(raw_round_trip.high, 0x0123_4567);
+    }
+
+    #[test]
+    fn time_mul_uses_full_i64_value() {
+        let lhs = Time::from(2_000_i64);
+        let rhs = Time::from(3_i64);
+
+        assert_eq!((lhs * rhs).to_i64(), 6_000_i64);
+    }
+
+    #[test]
+    fn time_display_uses_expected_units() {
+        assert_eq!(Time::from(123_i64).to_string(), "123 fs");
+        assert_eq!(Time::from(123_000_i64).to_string(), "123 ps");
+        assert_eq!(Time::from(123_000_000_i64).to_string(), "123 ns");
+        assert_eq!(Time::from(123_000_000_000_i64).to_string(), "123 µs");
+        assert_eq!(Time::from(123_000_000_000_000_i64).to_string(), "123 ms");
+        assert_eq!(Time::from(123_000_000_000_000_000_i64).to_string(), "123 s");
+    }
+}

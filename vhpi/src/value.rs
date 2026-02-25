@@ -1,4 +1,5 @@
 use crate::iso8859_1_val_to_string;
+use crate::string_to_iso8859_1_cstring;
 use crate::Error;
 use crate::Handle;
 use crate::LogicVal;
@@ -302,8 +303,8 @@ impl Handle {
         };
 
         let mut rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &raw mut val) };
+        // Allocate buffer so that it is kept for the whole function
         let mut buffer: Vec<u8> = vec![];
-
         if rc > 0 {
             // Need to allocate buffer space
             let buf_size = match val.format {
@@ -397,7 +398,7 @@ impl Handle {
             );
         }
 
-        match val.format {
+        let ret = match val.format {
             vhpi_sys::vhpiFormatT_vhpiIntVal => Ok(Value::Int(unsafe { val.value.intg })),
             vhpi_sys::vhpiFormatT_vhpiLogicVal => Ok(Value::Logic(LogicVal::from(unsafe {
                 val.value.enumv as u8
@@ -492,7 +493,12 @@ impl Handle {
                 Ok(Value::PhysicalVec(phys_vec))
             }
             _ => Ok(Value::Unknown),
-        }
+        };
+
+        // Keep buffer alive until after the the pointer is used to be safe
+        let _ = buffer;
+
+        ret
     }
 
     pub fn put_value(&self, value: Value, mode: PutValueMode) -> Result<(), Error> {
@@ -513,16 +519,43 @@ impl Handle {
                 Format::SmallEnum,
                 vhpi_sys::vhpiValueS__bindgen_ty_1 { smallenumv: n },
             ),
-            Value::BinStr(s)
-            | Value::OctStr(s)
-            | Value::HexStr(s)
-            | Value::DecStr(s)
-            | Value::Str(s) => {
-                let c_string = std::ffi::CString::new(s)
-                    .map_err(|_| "Failed to convert string to C string")?;
+            Value::BinStr(s) => {
+                let c_string = string_to_iso8859_1_cstring(s);
                 let ptr = c_string.into_raw().cast::<vhpi_sys::vhpiCharT>();
                 (
                     Format::BinStr,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { str_: ptr },
+                )
+            }
+            Value::OctStr(s) => {
+                let c_string = string_to_iso8859_1_cstring(s);
+                let ptr = c_string.into_raw().cast::<vhpi_sys::vhpiCharT>();
+                (
+                    Format::OctStr,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { str_: ptr },
+                )
+            }
+            Value::HexStr(s) => {
+                let c_string = string_to_iso8859_1_cstring(s);
+                let ptr = c_string.into_raw().cast::<vhpi_sys::vhpiCharT>();
+                (
+                    Format::HexStr,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { str_: ptr },
+                )
+            }
+            Value::DecStr(s) => {
+                let c_string = string_to_iso8859_1_cstring(s);
+                let ptr = c_string.into_raw().cast::<vhpi_sys::vhpiCharT>();
+                (
+                    Format::DecStr,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { str_: ptr },
+                )
+            }
+            Value::Str(s) => {
+                let c_string = string_to_iso8859_1_cstring(s);
+                let ptr = c_string.into_raw().cast::<vhpi_sys::vhpiCharT>();
+                (
+                    Format::Str,
                     vhpi_sys::vhpiValueS__bindgen_ty_1 { str_: ptr },
                 )
             }

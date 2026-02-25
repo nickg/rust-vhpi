@@ -28,6 +28,14 @@ use std::ffi::{CStr, CString};
 extern crate num_derive;
 
 pub fn printf(msg: impl AsRef<str>) {
+    static FMT: &[u8] = b"%s\n\0";
+    let cstr = string_to_iso8859_1_cstring(msg);
+    unsafe { vhpi_sys::vhpi_printf(FMT.as_ptr().cast::<i8>(), cstr.as_ptr()) };
+}
+
+/// Convert Rust string to ISO-8859-1 encoded C string
+/// Characters outside of ISO-8859-1 range are replaced with ?
+pub fn string_to_iso8859_1_cstring(msg: impl AsRef<str>) -> CString {
     // Convert UTF-8 string to ISO-8859-1 bytes
     let iso8859_1_bytes: Vec<u8> = msg
         .as_ref()
@@ -41,9 +49,7 @@ pub fn printf(msg: impl AsRef<str>) {
             }
         })
         .collect();
-    let cstr = CString::new(iso8859_1_bytes).unwrap();
-    static FMT: &[u8] = b"%s\n\0";
-    unsafe { vhpi_sys::vhpi_printf(FMT.as_ptr().cast::<i8>(), cstr.as_ptr()) };
+    CString::new(iso8859_1_bytes).unwrap()
 }
 
 #[macro_export]
@@ -65,4 +71,34 @@ fn iso8859_1_cstr_to_string(cstr: &CStr) -> String {
         .iter()
         .map(|&b| char::from_u32(u32::from(b)).unwrap())
         .collect::<String>()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn string_to_iso8859_1_cstring_preserves_ascii_and_latin1() {
+        let input = "Hello Àÿ";
+        let cstr = string_to_iso8859_1_cstring(input);
+
+        assert_eq!(cstr.as_bytes(), &[72, 101, 108, 108, 111, 32, 192, 255]);
+    }
+
+    #[test]
+    fn string_to_iso8859_1_cstring_replaces_out_of_range_chars() {
+        let input = "A€𝄞";
+        let cstr = string_to_iso8859_1_cstring(input);
+
+        assert_eq!(cstr.as_bytes(), b"A??");
+    }
+
+    #[test]
+    fn iso8859_1_cstr_to_string_decodes_latin1_bytes() {
+        let cstr =
+            CStr::from_bytes_with_nul(&[0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0xC0, 0xFF, 0x00])
+                .unwrap();
+
+        assert_eq!(iso8859_1_cstr_to_string(cstr), "Hello Àÿ");
+    }
 }
