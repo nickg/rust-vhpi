@@ -28,6 +28,14 @@ use std::ffi::{CStr, CString};
 extern crate num_derive;
 
 pub fn printf(msg: impl AsRef<str>) {
+    static FMT: &[u8] = b"%s\n\0";
+    let cstr = string_to_iso8859_1_cstring(msg);
+    unsafe { vhpi_sys::vhpi_printf(FMT.as_ptr().cast::<i8>(), cstr.as_ptr()) };
+}
+
+/// Convert Rust string to ISO-8859-1 encoded C string
+/// Characters outside of ISO-8859-1 range are replaced with ?
+pub fn string_to_iso8859_1_cstring(msg: impl AsRef<str>) -> CString {
     // Convert UTF-8 string to ISO-8859-1 bytes
     let iso8859_1_bytes: Vec<u8> = msg
         .as_ref()
@@ -41,9 +49,7 @@ pub fn printf(msg: impl AsRef<str>) {
             }
         })
         .collect();
-    let cstr = CString::new(iso8859_1_bytes).unwrap();
-    static FMT: &[u8] = b"%s\n\0";
-    unsafe { vhpi_sys::vhpi_printf(FMT.as_ptr().cast::<i8>(), cstr.as_ptr()) };
+    CString::new(iso8859_1_bytes).unwrap()
 }
 
 #[macro_export]
