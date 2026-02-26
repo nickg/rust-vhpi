@@ -1,4 +1,4 @@
-use crate::{OneToOne, PhysProperty, Time};
+use crate::{OneToOne, PhysProperty, StrProperty, Time};
 
 bitflags::bitflags! {
 #[derive(Debug)]
@@ -29,6 +29,14 @@ pub fn simulator_capabilities() -> Provides {
 #[must_use]
 pub fn simulator_name() -> String {
     crate::handle(crate::OneToOne::Tool).get_name()
+}
+
+#[must_use]
+pub fn simulator_version() -> String {
+    let tool_handle = crate::handle(crate::OneToOne::Tool);
+    tool_handle
+        .get_str(StrProperty::ToolVersion)
+        .unwrap_or_else(|| "unknown".to_string())
 }
 
 #[must_use]
