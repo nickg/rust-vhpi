@@ -1,5 +1,5 @@
 [workspace]
-members = ["vhpi-sys", "vhpi", "dumper"]
+members = ["vhpi-sys", "vhpi", "dumper", "tests/test_simple"]
 resolver = "2"
 
 [workspace.package]
@@ -14,5 +14,6 @@ vhpi = {path = "vhpi"}
 vhpi-sys = {path = "vhpi-sys"}
 bindgen = "0.72"
 bitflags = "2.11"
+num-bigint = "0.4"
 num-derive = "0.4"
 num-traits = "0.2"
