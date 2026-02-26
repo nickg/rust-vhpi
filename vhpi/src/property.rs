@@ -1,4 +1,5 @@
 use num_derive::FromPrimitive;
+use num_traits::Zero;
 use std::ffi::CStr;
 use vhpi_sys::{vhpi_get, vhpi_get_str, vhpi_iterator, vhpi_scan};
 
@@ -304,10 +305,11 @@ impl Handle {
         let is_up = handle.get(IntProperty::IsUp);
         let left = handle.get(IntProperty::LeftBound);
         let right = handle.get(IntProperty::RightBound);
-        if is_up == 0 {
-            return Box::new((right..=left).rev());
+        if is_up.is_zero() {
+            Box::new((right..=left).rev())
+        } else {
+            Box::new(left..=right)
         }
-        Box::new(left..=right)
     }
 
     #[must_use]

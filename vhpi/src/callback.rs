@@ -194,17 +194,15 @@ impl Handle {
             value: std::ptr::null_mut(),
             user_data,
         };
-        let ret = unsafe { vhpi_register_cb(&raw mut cb_data, 0) };
-        if ret.is_null() {
-            unsafe {
-                drop(Box::from_raw(user_data.cast::<F>()));
+        let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
+        match check_error() {
+            Some(err) => {
+                unsafe {
+                    drop(Box::from_raw(user_data.cast::<F>()));
+                }
+                Err(RegisterCbError::Error(err))
             }
-            check_error().map_or_else(
-                || Err(RegisterCbError::UnknownReason),
-                |err| Err(RegisterCbError::Error(err)),
-            )
-        } else {
-            Ok(Handle::from_raw(ret))
+            None => Ok(Handle::from_raw(ret)),
         }
     }
 }

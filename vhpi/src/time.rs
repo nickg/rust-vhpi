@@ -1,3 +1,5 @@
+use num_traits::Zero;
+
 use crate::Physical;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -63,18 +65,20 @@ impl std::ops::Mul<Time> for Time {
 impl std::fmt::Display for Time {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let time = self.to_i64();
-        if time % 1000 != 0 {
+        if !(time % 1000).is_zero() {
             write!(f, "{time} fs")
-        } else if time % 1_000_000 != 0 {
+        } else if !(time % 1_000_000).is_zero() {
             write!(f, "{} ps", time / 1000)
-        } else if time % 1_000_000_000 != 0 {
+        } else if !(time % 1_000_000_000).is_zero() {
             write!(f, "{} ns", time / 1_000_000)
-        } else if time % 1_000_000_000_000 != 0 {
+        } else if !(time % 1_000_000_000_000).is_zero() {
             write!(f, "{} µs", time / 1_000_000_000)
-        } else if time % 1_000_000_000_000_000 != 0 {
+        } else if !(time % 1_000_000_000_000_000).is_zero() {
             write!(f, "{} ms", time / 1_000_000_000_000)
-        } else {
+        } else if !(time % 1_000_000_000_000_000_000).is_zero() {
             write!(f, "{} s", time / 1_000_000_000_000_000)
+        } else {
+            write!(f, "{} m", time / 1_000_000_000_000_000_000)
         }
     }
 }
@@ -163,5 +167,6 @@ mod tests {
         assert_eq!(Time::from(123_000_000_000_i64).to_string(), "123 µs");
         assert_eq!(Time::from(123_000_000_000_000_i64).to_string(), "123 ms");
         assert_eq!(Time::from(123_000_000_000_000_000_i64).to_string(), "123 s");
+        assert_eq!(Time::from(1_000_000_000_000_000_000_i64).to_string(), "1 m");
     }
 }
