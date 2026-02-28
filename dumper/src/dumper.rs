@@ -195,6 +195,7 @@ fn end_of_sim(_data: &vhpi::CbData) {
 pub extern "C" fn dumper_startup() {
     vhpi::printf("dumper plugin loaded");
     vhpi::printf!("simulator name: {}", vhpi::simulator_name());
+    vhpi::printf!("simulator version: {}", vhpi::simulator_version());
     vhpi::printf!(
         "simulator time resolution: {}",
         vhpi::simulator_time_resolution()

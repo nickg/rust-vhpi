@@ -1,3 +1,4 @@
+use num_traits::Zero;
 use std::ffi::CString;
 use vhpi_sys::{
     vhpiHandleT, vhpi_compare_handles, vhpi_handle, vhpi_handle_by_index, vhpi_handle_by_name,
@@ -178,7 +179,7 @@ impl Default for Handle {
 
 impl PartialEq for Handle {
     fn eq(&self, other: &Self) -> bool {
-        unsafe { vhpi_compare_handles(self.handle, other.handle) != 0 }
+        unsafe { !vhpi_compare_handles(self.handle, other.handle).is_zero() }
     }
 }
 

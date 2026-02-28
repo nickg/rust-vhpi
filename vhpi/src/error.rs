@@ -1,6 +1,8 @@
 use std::ffi::CStr;
 use std::fmt;
 
+use num_traits::Zero;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Severity {
     Note,
@@ -98,7 +100,7 @@ pub fn check_error() -> Option<Error> {
     };
 
     let rc = unsafe { vhpi_sys::vhpi_check_error(&raw mut info) };
-    if rc == 0 {
+    if rc.is_zero() {
         return None;
     }
 

@@ -1,4 +1,4 @@
-use crate::{OneToOne, PhysProperty, Time};
+use crate::{IntProperty, OneToOne, PhysProperty, StrProperty, Time};
 
 bitflags::bitflags! {
 #[derive(Debug)]
@@ -20,19 +20,26 @@ bitflags::bitflags! {
 #[must_use]
 pub fn simulator_capabilities() -> Provides {
     let tool_handle = unsafe { vhpi_sys::vhpi_handle(OneToOne::Tool as u32, std::ptr::null_mut()) };
-    let caps =
-        unsafe { vhpi_sys::vhpi_get(vhpi_sys::vhpiIntPropertyT_vhpiCapabilitiesP, tool_handle) };
+    let caps = unsafe { vhpi_sys::vhpi_get(IntProperty::Capabilities as u32, tool_handle) };
     Provides::from_bits(caps as u32)
         .unwrap_or_else(|| panic!("Invalid capabilities bitmask: {caps:#010x}",))
 }
 
 #[must_use]
 pub fn simulator_name() -> String {
-    crate::handle(crate::OneToOne::Tool).get_name()
+    crate::handle(OneToOne::Tool).get_name()
+}
+
+#[must_use]
+pub fn simulator_version() -> String {
+    crate::handle(OneToOne::Tool)
+        .get_str(StrProperty::ToolVersion)
+        .unwrap_or_else(|| "unknown".to_string())
 }
 
 #[must_use]
 pub fn simulator_time_resolution() -> Time {
-    let tool_handle = crate::handle(crate::OneToOne::Tool);
-    tool_handle.get_phys(PhysProperty::ResolutionLimit).into()
+    crate::handle(OneToOne::Tool)
+        .get_phys(PhysProperty::ResolutionLimit)
+        .into()
 }

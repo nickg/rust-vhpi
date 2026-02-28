@@ -13,6 +13,7 @@ use std::mem::size_of;
 use num_bigint::{BigInt, BigUint};
 #[cfg(feature = "bigint")]
 use num_traits::One;
+use num_traits::Zero;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
@@ -722,13 +723,11 @@ impl Handle {
         // Keep buffer_holder alive until after vhpi_put_value
         let _ = &buffer_holder;
 
-        if rc != 0 {
-            return Err(
-                crate::check_error().unwrap_or_else(|| "Unknown error in vhpi_put_value".into())
-            );
+        if rc.is_zero() {
+            Ok(())
+        } else {
+            Err(crate::check_error().unwrap_or_else(|| "Unknown error in vhpi_put_value".into()))
         }
-
-        Ok(())
     }
 }
 
@@ -751,7 +750,7 @@ pub fn uint_to_logic_vec(mut value: u64, width: usize) -> Value {
     let mut logic_vec = Vec::with_capacity(width);
     for _ in 0..width {
         let bit = (value & 1) as u8;
-        logic_vec.push(if bit == 0 {
+        logic_vec.push(if bit.is_zero() {
             LogicVal::Zero
         } else {
             LogicVal::One
@@ -771,7 +770,7 @@ pub fn int_to_logic_vec(mut value: i64, width: usize) -> Value {
     let mut logic_vec = Vec::with_capacity(width);
     for _ in 0..width {
         let bit = (value & 1) as u8;
-        logic_vec.push(if bit == 0 {
+        logic_vec.push(if bit.is_zero() {
             LogicVal::Zero
         } else {
             LogicVal::One
@@ -883,7 +882,7 @@ pub fn bigint_to_logic_vec(value: &BigInt, width: usize) -> Value {
     let one = BigInt::one();
     for _ in 0..width {
         let bit = &temp & &one;
-        logic_vec.push(if bit == BigInt::ZERO {
+        logic_vec.push(if bit.is_zero() {
             LogicVal::Zero
         } else {
             LogicVal::One
@@ -905,7 +904,7 @@ pub fn biguint_to_logic_vec(value: &BigUint, width: usize) -> Value {
     let one = BigUint::one();
     for _ in 0..width {
         let bit = &temp & &one;
-        logic_vec.push(if bit == BigUint::ZERO {
+        logic_vec.push(if bit.is_zero() {
             LogicVal::Zero
         } else {
             LogicVal::One
