@@ -43,3 +43,9 @@ pub fn simulator_time_resolution() -> Time {
         .get_phys(PhysProperty::ResolutionLimit)
         .into()
 }
+
+#[must_use]
+#[cfg(feature = "nvc")]
+pub fn simulator_random_seed() -> i32 {
+    crate::handle(OneToOne::Tool).get(IntProperty::RandomSeed)
+}
