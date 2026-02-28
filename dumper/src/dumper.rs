@@ -204,6 +204,7 @@ pub extern "C" fn dumper_startup() {
         "simulator capabilities: {:?}",
         vhpi::simulator_capabilities()
     );
+    vhpi::printf!("simulator random seed: {:?}", vhpi::simulator_random_seed());
 
     let _ = vhpi::register_cb(vhpi::CbReason::StartOfSimulation, start_of_sim);
     let _ = vhpi::register_cb(vhpi::CbReason::EndOfSimulation, end_of_sim);

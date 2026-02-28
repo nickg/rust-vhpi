@@ -105,6 +105,8 @@ pub enum IntProperty {
     IsBuiltIn = vhpi_sys::vhpiIntPropertyT_vhpiIsBuiltInP,
     IsDynamic = vhpi_sys::vhpiIntPropertyT_vhpiIsDynamicP,
     IsOperator = vhpi_sys::vhpiIntPropertyT_vhpiIsOperatorP,
+    #[cfg(feature = "nvc")]
+    RandomSeed = vhpi_sys::vhpiIntPropertyT_vhpiRandomSeedP,
 }
 
 #[repr(u32)]
@@ -242,6 +244,7 @@ pub enum ClassKind {
     SeqProcCallStmt = vhpi_sys::vhpiClassKindT_vhpiSeqProcCallStmtK,
     SeqSigAssignStmt = vhpi_sys::vhpiClassKindT_vhpiSeqSigAssignStmtK,
     ProtectedTypeInst = vhpi_sys::vhpiClassKindT_vhpiProtectedTypeInstK,
+    #[cfg(feature = "nvc")]
     VerilogModule = vhpi_sys::vhpiClassKindT_vhpiVerilogModuleK,
 }
 

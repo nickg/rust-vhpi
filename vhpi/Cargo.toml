@@ -21,5 +21,6 @@ num-traits.workspace = true
 vhpi-sys.workspace = true
 
 [features]
-default = []
+default = ["nvc"]
 bigint = ["num-bigint"]
+nvc = ["vhpi-sys/nvc"]
