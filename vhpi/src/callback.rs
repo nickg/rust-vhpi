@@ -178,6 +178,10 @@ where
     }
 }
 
+pub fn remove_cb(handle: &Handle) {
+    unsafe { vhpi_sys::vhpi_remove_cb(handle.as_raw()) };
+}
+
 impl Handle {
     pub fn register_cb<F>(&self, reason: CbReason, callback: F) -> Result<Handle, RegisterCbError>
     where
@@ -204,5 +208,9 @@ impl Handle {
             }
             None => Ok(Handle::from_raw(ret)),
         }
+    }
+
+    pub fn remove_cb(&self) {
+        unsafe { vhpi_sys::vhpi_remove_cb(self.as_raw()) };
     }
 }

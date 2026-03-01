@@ -3,6 +3,8 @@ use std::fmt;
 
 use num_traits::Zero;
 
+use crate::string_to_iso8859_1_cstring;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Severity {
     Note,
@@ -17,12 +19,12 @@ pub enum Severity {
 impl From<vhpi_sys::vhpiSeverityT> for Severity {
     fn from(raw: vhpi_sys::vhpiSeverityT) -> Self {
         match raw {
-            1 => Severity::Note,
-            2 => Severity::Warning,
-            3 => Severity::Error,
-            4 => Severity::System,
-            5 => Severity::Internal,
-            6 => Severity::Failure,
+            vhpi_sys::vhpiSeverityT_vhpiNote => Severity::Note,
+            vhpi_sys::vhpiSeverityT_vhpiWarning => Severity::Warning,
+            vhpi_sys::vhpiSeverityT_vhpiError => Severity::Error,
+            vhpi_sys::vhpiSeverityT_vhpiSystem => Severity::System,
+            vhpi_sys::vhpiSeverityT_vhpiInternal => Severity::Internal,
+            vhpi_sys::vhpiSeverityT_vhpiFailure => Severity::Failure,
             other => Severity::Unknown(other),
         }
     }
@@ -31,12 +33,12 @@ impl From<vhpi_sys::vhpiSeverityT> for Severity {
 impl From<Severity> for vhpi_sys::vhpiSeverityT {
     fn from(sev: Severity) -> Self {
         match sev {
-            Severity::Note => 1,
-            Severity::Warning => 2,
-            Severity::Error => 3,
-            Severity::System => 4,
-            Severity::Internal => 5,
-            Severity::Failure => 6,
+            Severity::Note => vhpi_sys::vhpiSeverityT_vhpiNote,
+            Severity::Warning => vhpi_sys::vhpiSeverityT_vhpiWarning,
+            Severity::Error => vhpi_sys::vhpiSeverityT_vhpiError,
+            Severity::System => vhpi_sys::vhpiSeverityT_vhpiSystem,
+            Severity::Internal => vhpi_sys::vhpiSeverityT_vhpiInternal,
+            Severity::Failure => vhpi_sys::vhpiSeverityT_vhpiFailure,
             Severity::Unknown(n) => n,
         }
     }
@@ -135,7 +137,17 @@ pub fn check_error() -> Option<Error> {
     })
 }
 
-pub fn assert(severity: Severity, message: &str) {
-    let c_message = std::ffi::CString::new(message).unwrap();
+pub fn assert(severity: Severity, message: impl AsRef<str>) {
+    let c_message = string_to_iso8859_1_cstring(message);
     unsafe { vhpi_sys::vhpi_assert(severity.into(), c_message.as_ptr().cast_mut()) };
+}
+
+#[macro_export]
+/// Assert a condition with a severity and print a message through the simulator if the assertion fails
+macro_rules! assert {
+    ($cond:expr, $severity:expr, $($arg:tt)*) => {{
+        if !($cond) {
+            $crate::assert($severity, &format!($($arg)*));
+        }
+    }}
 }
