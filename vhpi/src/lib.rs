@@ -27,6 +27,7 @@ use std::ffi::{CStr, CString};
 
 extern crate num_derive;
 
+/// Print a message to the simulator console using `vhpi_printf`
 pub fn printf(msg: impl AsRef<str>) {
     static FMT: &[u8] = b"%s\n\0";
     let cstr = string_to_iso8859_1_cstring(msg);

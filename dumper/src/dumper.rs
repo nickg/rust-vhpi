@@ -206,6 +206,12 @@ pub extern "C" fn dumper_startup() {
     );
     vhpi::printf!("simulator random seed: {:?}", vhpi::simulator_random_seed());
 
+    vhpi::assert!(
+        false,
+        vhpi::Severity::Warning,
+        "This is a test assertion with severity Warning"
+    );
+
     let _ = vhpi::register_cb(vhpi::CbReason::StartOfSimulation, start_of_sim);
     let _ = vhpi::register_cb(vhpi::CbReason::EndOfSimulation, end_of_sim);
     let _ = vhpi::register_cb(vhpi::CbReason::NextTimeStep, next_time_step);
