@@ -21,3 +21,6 @@ jobs:
       - name: Run test_simple against tb_simple
         run: |
           ./scripts/run_test_simple.sh
+      - name: Run stringindexing against tb_string
+        run: |
+          ./scripts/run_stringindexing.sh

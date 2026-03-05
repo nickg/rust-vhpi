@@ -26,15 +26,13 @@ pub fn simulator_capabilities() -> Provides {
 }
 
 #[must_use]
-pub fn simulator_name() -> String {
+pub fn simulator_name() -> Option<String> {
     crate::handle(OneToOne::Tool).get_name()
 }
 
 #[must_use]
-pub fn simulator_version() -> String {
-    crate::handle(OneToOne::Tool)
-        .get_str(StrProperty::ToolVersion)
-        .unwrap_or_else(|| "unknown".to_string())
+pub fn simulator_version() -> Option<String> {
+    crate::handle(OneToOne::Tool).get_str(StrProperty::ToolVersion)
 }
 
 #[must_use]

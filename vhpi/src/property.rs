@@ -292,13 +292,13 @@ impl Handle {
     }
 
     #[must_use]
-    pub fn get_name(&self) -> String {
-        self.get_str(StrProperty::Name).unwrap()
+    pub fn get_name(&self) -> Option<String> {
+        self.get_str(StrProperty::Name)
     }
 
     #[must_use]
-    pub fn get_full_name(&self) -> String {
-        self.get_str(StrProperty::FullName).unwrap()
+    pub fn get_full_name(&self) -> Option<String> {
+        self.get_str(StrProperty::FullName)
     }
 
     #[must_use]

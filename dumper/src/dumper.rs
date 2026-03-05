@@ -12,15 +12,16 @@ fn value_change(data: &vhpi::CbData) {
             match type_handle.get_kind() {
                 Some(vhpi::ClassKind::ArrayTypeDecl) => {
                     let elem_type_handle = type_handle.handle(vhpi::OneToOne::ElemType);
-                    for i in type_handle.index_range() {
-                        if let Some(indexed_handle) =
-                            data.obj.handle_by_index(vhpi::OneToMany::IndexedNames, i)
+                    for (index, i) in type_handle.index_range().enumerate() {
+                        if let Some(indexed_handle) = data
+                            .obj
+                            .handle_by_index(vhpi::OneToMany::IndexedNames, index as i32)
                         {
                             vhpi::printf!(
                                 "element {} of array {} is of type {} with value {}",
                                 i,
-                                data.obj.get_name(),
-                                elem_type_handle.get_name(),
+                                data.obj.get_name().unwrap(),
+                                elem_type_handle.get_name().unwrap(),
                                 indexed_handle
                                     .get_value(vhpi::Format::ObjType)
                                     .unwrap_or(vhpi::Value::Unknown)
@@ -34,9 +35,9 @@ fn value_change(data: &vhpi::CbData) {
 
                         vhpi::printf!(
                             "signal {} is a field of the record {} of type {} with value {}",
-                            field_handle.get_name(),
-                            data.obj.get_name(),
-                            field_type_handle.get_name(),
+                            field_handle.get_name().unwrap(),
+                            data.obj.get_name().unwrap(),
+                            field_type_handle.get_name().unwrap(),
                             field_handle
                                 .get_value(vhpi::Format::ObjType)
                                 .unwrap_or(vhpi::Value::Unknown)
@@ -49,7 +50,7 @@ fn value_change(data: &vhpi::CbData) {
                         full_name,
                         err,
                         kind,
-                        type_handle.get_name(),
+                        type_handle.get_name().unwrap(),
                         type_kind
                     );
                 }
@@ -63,7 +64,7 @@ fn value_change(data: &vhpi::CbData) {
 
 fn walk_region(region: &vhpi::Handle) {
     for port in region.iterator(vhpi::OneToMany::PortDecls) {
-        println!("port {}", port.get_name());
+        println!("port {}", port.get_name().unwrap());
         let _ = port.register_cb(vhpi::CbReason::ValueChange, value_change);
     }
 
@@ -75,26 +76,26 @@ fn walk_region(region: &vhpi::Handle) {
                     Ok(_) => {
                         println!(
                             "signal {} is an array of type {}",
-                            sig.get_name(),
-                            type_handle.get_name()
+                            sig.get_name().unwrap(),
+                            type_handle.get_name().unwrap()
                         );
                     }
                     Err(err) => {
                         let elem_type_handle = type_handle.handle(vhpi::OneToOne::ElemType);
-                        for i in type_handle.index_range() {
+                        for (index, i) in type_handle.index_range().enumerate() {
                             println!(
-                                "element {} of array {} is of type {}",
-                                i,
-                                sig.get_name(),
-                                elem_type_handle.get_name(),
+                                "element {i} of array {} is of type {}",
+                                sig.get_name().unwrap(),
+                                elem_type_handle.get_name().unwrap(),
                             );
-                            if let Some(h) = sig.handle_by_index(vhpi::OneToMany::IndexedNames, i) {
+                            if let Some(h) =
+                                sig.handle_by_index(vhpi::OneToMany::IndexedNames, index as i32)
+                            {
                                 if let Err(e) =
                                     h.register_cb(vhpi::CbReason::ValueChange, value_change)
                                 {
                                     vhpi::printf!(
-                                        "failed to register callback for element {}: {:?}",
-                                        i,
+                                        "failed to register callback for element {i}: {:?}",
                                         e
                                     );
                                 }
@@ -102,8 +103,8 @@ fn walk_region(region: &vhpi::Handle) {
                         }
                         println!(
                             "signal {} is an array of type {}",
-                            sig.get_name(),
-                            type_handle.get_name()
+                            sig.get_name().unwrap(),
+                            type_handle.get_name().unwrap()
                         );
                         println!("but failed to get value: {err}");
                     }
@@ -113,21 +114,21 @@ fn walk_region(region: &vhpi::Handle) {
             Some(vhpi::ClassKind::RecordTypeDecl) => {
                 println!(
                     "signal {} is a record of type {}",
-                    sig.get_name(),
-                    type_handle.get_name()
+                    sig.get_name().unwrap(),
+                    type_handle.get_name().unwrap()
                 );
                 for field in sig.iterator(vhpi::OneToMany::SelectedNames) {
                     let field_type_handle = field.handle(vhpi::OneToOne::Type);
                     println!(
                         "field {} of record {} (type: {})",
-                        field.get_name(),
-                        sig.get_name(),
-                        field_type_handle.get_name()
+                        field.get_name().unwrap(),
+                        sig.get_name().unwrap(),
+                        field_type_handle.get_name().unwrap()
                     );
                     if let Err(e) = field.register_cb(vhpi::CbReason::ValueChange, value_change) {
                         vhpi::printf!(
                             "failed to register callback for field {}: {:?}",
-                            field.get_name(),
+                            field.get_name().unwrap(),
                             e
                         );
                     }
@@ -137,8 +138,8 @@ fn walk_region(region: &vhpi::Handle) {
             Some(vhpi::ClassKind::EnumTypeDecl) => {
                 println!(
                     "signal {} is an enum of type {} with values {:?}",
-                    sig.get_name(),
-                    type_handle.get_name(),
+                    sig.get_name().unwrap(),
+                    type_handle.get_name().unwrap(),
                     type_handle.enum_literals().unwrap_or_default()
                 );
                 let _ = sig.register_cb(vhpi::CbReason::ValueChange, value_change);
@@ -146,20 +147,20 @@ fn walk_region(region: &vhpi::Handle) {
             Some(kind) => {
                 println!(
                     "signal {}, type {} (kind: {:?})",
-                    sig.get_name(),
-                    type_handle.get_name(),
+                    sig.get_name().unwrap(),
+                    type_handle.get_name().unwrap(),
                     kind
                 );
                 let _ = sig.register_cb(vhpi::CbReason::ValueChange, value_change);
             }
             None => {
-                println!("signal {} with unsupported kind", sig.get_name(),);
+                println!("signal {} with unsupported kind", sig.get_name().unwrap(),);
             }
         }
     }
 
     for sub in region.iterator(vhpi::OneToMany::InternalRegions) {
-        println!("internal region {}", sub.get_name());
+        println!("internal region {}", sub.get_name().unwrap());
         walk_region(&sub);
     }
 }
@@ -169,7 +170,7 @@ fn start_of_sim(_data: &vhpi::CbData) {
 
     let root = vhpi::handle(vhpi::OneToOne::RootInst);
 
-    vhpi::printf!("root name is {}", root.get_name());
+    vhpi::printf!("root name is {}", root.get_name().unwrap());
     vhpi::printf!("root kind is {:?}", root.get_kind());
 
     walk_region(&root);
@@ -194,8 +195,8 @@ fn end_of_sim(_data: &vhpi::CbData) {
 #[no_mangle]
 pub extern "C" fn dumper_startup() {
     vhpi::printf("dumper plugin loaded");
-    vhpi::printf!("simulator name: {}", vhpi::simulator_name());
-    vhpi::printf!("simulator version: {}", vhpi::simulator_version());
+    vhpi::printf!("simulator name: {}", vhpi::simulator_name().unwrap());
+    vhpi::printf!("simulator version: {}", vhpi::simulator_version().unwrap());
     vhpi::printf!(
         "simulator time resolution: {}",
         vhpi::simulator_time_resolution()
