@@ -188,11 +188,11 @@ pub enum Format {
     PhysicalVec,
     Time,
     TimeVec,
-    Unknown(u32),
+    Unknown(vhpi_sys::vhpiFormatT),
 }
 
-impl From<vhpi_sys::vhpiSeverityT> for Format {
-    fn from(raw: vhpi_sys::vhpiSeverityT) -> Self {
+impl From<vhpi_sys::vhpiFormatT> for Format {
+    fn from(raw: vhpi_sys::vhpiFormatT) -> Self {
         match raw {
             vhpi_sys::vhpiFormatT_vhpiObjTypeVal => Format::ObjType,
             vhpi_sys::vhpiFormatT_vhpiBinStrVal => Format::BinStr,

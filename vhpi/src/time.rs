@@ -99,10 +99,10 @@ pub fn get_time() -> Time {
 
 #[must_use]
 pub fn get_cycles() -> i64 {
-    let mut cycles = 0;
+    let mut cycles: std::os::raw::c_long = 0;
     unsafe { vhpi_sys::vhpi_get_time(std::ptr::null_mut(), &raw mut cycles) };
 
-    cycles
+    cycles as i64
 }
 
 #[must_use]
