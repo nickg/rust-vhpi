@@ -7,7 +7,8 @@ jobs:
       matrix:
         # Final value should correspond to rust-version in Cargo.toml
         toolchain: ["stable", "nightly", "1.82"]
-    runs-on: ubuntu-latest
+        platform: ["ubuntu-latest", "windows-latest", "macos-latest"]
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Set up Rust

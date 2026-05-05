@@ -9,6 +9,8 @@ publish = false
 
 [lib]
 crate-type = ["cdylib"]
+test = false
+doctest = false
 
 [dependencies]
 vhpi.workspace = true

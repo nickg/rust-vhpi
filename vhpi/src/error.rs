@@ -13,7 +13,7 @@ pub enum Severity {
     System,
     Internal,
     Failure,
-    Unknown(u32),
+    Unknown(vhpi_sys::vhpiSeverityT),
 }
 
 impl From<vhpi_sys::vhpiSeverityT> for Severity {

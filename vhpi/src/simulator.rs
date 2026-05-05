@@ -3,24 +3,36 @@ use crate::{IntProperty, OneToOne, PhysProperty, StrProperty, Time};
 bitflags::bitflags! {
 #[derive(Debug)]
     pub struct Provides: u32 {
-        const HIERARCHY  = vhpi_sys::vhpiCapabibilityT_vhpiProvidesHierarchy;
-        const STATIC_ACCESS = vhpi_sys::vhpiCapabibilityT_vhpiProvidesStaticAccess;
-        const CONNECTIVITY = vhpi_sys::vhpiCapabibilityT_vhpiProvidesConnectivity;
-        const POST_ANALYSIS = vhpi_sys::vhpiCapabibilityT_vhpiProvidesPostAnalysis;
-        const FOREIGN_MODEL = vhpi_sys::vhpiCapabibilityT_vhpiProvidesForeignModel;
-        const ADVANCED_FOREIGN_MODEL = vhpi_sys::vhpiCapabibilityT_vhpiProvidesAdvancedForeignModel;
-        const SAVE_RESTART = vhpi_sys::vhpiCapabibilityT_vhpiProvidesSaveRestart;
-        const RESET = vhpi_sys::vhpiCapabibilityT_vhpiProvidesReset;
-        const DEBUG_RUNTIME = vhpi_sys::vhpiCapabibilityT_vhpiProvidesDebugRuntime;
-        const ADVANCED_DEBUG_RUNTIME = vhpi_sys::vhpiCapabibilityT_vhpiProvidesAdvancedDebugRuntime;
-        const DYNAMIC_ELAB = vhpi_sys::vhpiCapabibilityT_vhpiProvidesDynamicElab;
+        const HIERARCHY  = vhpi_sys::vhpiCapabibilityT_vhpiProvidesHierarchy as u32;
+        const STATIC_ACCESS = vhpi_sys::vhpiCapabibilityT_vhpiProvidesStaticAccess as u32;
+        const CONNECTIVITY = vhpi_sys::vhpiCapabibilityT_vhpiProvidesConnectivity as u32;
+        const POST_ANALYSIS = vhpi_sys::vhpiCapabibilityT_vhpiProvidesPostAnalysis as u32;
+        const FOREIGN_MODEL = vhpi_sys::vhpiCapabibilityT_vhpiProvidesForeignModel as u32;
+        const ADVANCED_FOREIGN_MODEL =
+            vhpi_sys::vhpiCapabibilityT_vhpiProvidesAdvancedForeignModel as u32;
+        const SAVE_RESTART = vhpi_sys::vhpiCapabibilityT_vhpiProvidesSaveRestart as u32;
+        const RESET = vhpi_sys::vhpiCapabibilityT_vhpiProvidesReset as u32;
+        const DEBUG_RUNTIME = vhpi_sys::vhpiCapabibilityT_vhpiProvidesDebugRuntime as u32;
+        const ADVANCED_DEBUG_RUNTIME =
+            vhpi_sys::vhpiCapabibilityT_vhpiProvidesAdvancedDebugRuntime as u32;
+        const DYNAMIC_ELAB = vhpi_sys::vhpiCapabibilityT_vhpiProvidesDynamicElab as u32;
     }
 }
 
 #[must_use]
 pub fn simulator_capabilities() -> Provides {
-    let tool_handle = unsafe { vhpi_sys::vhpi_handle(OneToOne::Tool as u32, std::ptr::null_mut()) };
-    let caps = unsafe { vhpi_sys::vhpi_get(IntProperty::Capabilities as u32, tool_handle) };
+    let tool_handle = unsafe {
+        vhpi_sys::vhpi_handle(
+            OneToOne::Tool as vhpi_sys::vhpiOneToOneT,
+            std::ptr::null_mut(),
+        )
+    };
+    let caps = unsafe {
+        vhpi_sys::vhpi_get(
+            IntProperty::Capabilities as vhpi_sys::vhpiIntPropertyT,
+            tool_handle,
+        )
+    };
     Provides::from_bits(caps as u32)
         .unwrap_or_else(|| panic!("Invalid capabilities bitmask: {caps:#010x}",))
 }
