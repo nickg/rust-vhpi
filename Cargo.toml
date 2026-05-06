@@ -10,8 +10,8 @@ repository = "https://github.com/nickg/rust-vhpi"
 rust-version = "1.82"
 
 [workspace.dependencies]
-vhpi = {path = "vhpi"}
-vhpi-sys = {path = "vhpi-sys"}
+vhpi = { path = "vhpi", version = "0.2.0" }
+vhpi-sys = { path = "vhpi-sys", version = "0.2.0" }
 bindgen = "0.72"
 bitflags = "2.11"
 num-bigint = "0.4"
