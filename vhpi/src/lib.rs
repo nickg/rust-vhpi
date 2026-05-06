@@ -43,11 +43,7 @@ pub fn string_to_iso8859_1_cstring(msg: impl AsRef<str>) -> CString {
         .chars()
         .map(|c| {
             let code = c as u32;
-            if code <= 0xFF {
-                code as u8
-            } else {
-                b'?' // Replace characters outside ISO-8859-1 range
-            }
+            u8::try_from(code).unwrap_or(b'?')
         })
         .collect();
     CString::new(iso8859_1_bytes).unwrap()
