@@ -1,3 +1,5 @@
+#![cfg_attr(not(windows), allow(clippy::unnecessary_cast))]
+
 use crate::{IntProperty, OneToOne, PhysProperty, StrProperty, Time};
 
 bitflags::bitflags! {

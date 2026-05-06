@@ -1,3 +1,5 @@
+#![cfg_attr(not(windows), allow(clippy::unnecessary_cast))]
+
 use crate::{check_error, Error, Handle};
 use vhpi_sys::{vhpiCbDataS, vhpi_register_cb};
 

@@ -1,3 +1,5 @@
+#![cfg_attr(not(windows), allow(clippy::unnecessary_cast))]
+
 use num_traits::Zero;
 use std::ffi::CString;
 use vhpi_sys::{
