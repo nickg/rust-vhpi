@@ -49,6 +49,23 @@ impl From<LogicVal> for vhpi_sys::vhpiEnumT {
     }
 }
 
+impl From<LogicVal> for u8 {
+    fn from(logic: LogicVal) -> Self {
+        match logic {
+            LogicVal::U => b'u',
+            LogicVal::X => b'x',
+            LogicVal::Zero => b'0',
+            LogicVal::One => b'1',
+            LogicVal::Z => b'z',
+            LogicVal::W => b'w',
+            LogicVal::L => b'l',
+            LogicVal::H => b'h',
+            LogicVal::DontCare => b'-',
+            LogicVal::Unknown(v) => v,
+        }
+    }
+}
+
 impl TryFrom<char> for LogicVal {
     type Error = ();
 
@@ -86,5 +103,28 @@ impl fmt::Display for LogicVal {
                 LogicVal::Unknown(v) => return write!(f, "?({v})"),
             }
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::LogicVal;
+
+    #[test]
+    fn logic_val_to_u8_uses_lowercase_symbols() {
+        assert_eq!(u8::from(LogicVal::U), b'u');
+        assert_eq!(u8::from(LogicVal::X), b'x');
+        assert_eq!(u8::from(LogicVal::Zero), b'0');
+        assert_eq!(u8::from(LogicVal::One), b'1');
+        assert_eq!(u8::from(LogicVal::Z), b'z');
+        assert_eq!(u8::from(LogicVal::W), b'w');
+        assert_eq!(u8::from(LogicVal::L), b'l');
+        assert_eq!(u8::from(LogicVal::H), b'h');
+        assert_eq!(u8::from(LogicVal::DontCare), b'-');
+    }
+
+    #[test]
+    fn logic_val_to_u8_unknown_passthrough() {
+        assert_eq!(u8::from(LogicVal::Unknown(b'Q')), b'Q');
     }
 }
