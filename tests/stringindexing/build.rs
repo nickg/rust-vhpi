@@ -8,5 +8,10 @@ fn main() {
     #[cfg(all(target_os = "windows", target_env = "gnu"))]
     println!("cargo:rustc-link-arg=-Wl,--allow-shlib-undefined");
 
-    // Linux/macOS: no extra linker args required.
+    // On macOS, allow unresolved symbols in the plugin and resolve them
+    // against the host simulator at load time.
+    #[cfg(target_os = "macos")]
+    println!("cargo:rustc-link-arg=-Wl,-undefined,dynamic_lookup");
+
+    // Linux: no extra linker args required.
 }
