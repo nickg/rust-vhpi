@@ -64,7 +64,11 @@ fn value_change(data: &vhpi::CbData) {
 
 fn walk_region(region: &vhpi::Handle) {
     for port in region.iterator(vhpi::OneToMany::PortDecls) {
-        println!("port {}", port.get_name().unwrap());
+        println!(
+            "port {} ({:?})",
+            port.get_name().unwrap(),
+            port.get_mode().unwrap()
+        );
         let _ = port.register_cb(vhpi::CbReason::ValueChange, value_change);
     }
 
