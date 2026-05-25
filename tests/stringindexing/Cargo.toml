@@ -13,4 +13,4 @@ test = false
 doctest = false
 
 [dependencies]
-vhpi.workspace = true
+vhpi = { workspace = true, features = ["dynamic"] }

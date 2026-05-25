@@ -1,6 +1,16 @@
-#![cfg_attr(not(windows), allow(dead_code))]
+// FFI bindings to the VHPI C API.
+//
+// Dynamic symbol resolution is used on Windows with the dynamic feature,
+// while direct linking is used on other platforms.
+// This allows the library to be used as a plugin without requiring the
+// simulator's import library at build time, while still allowing direct
+// linking on platforms where that's easier to set up.
+//
+// On Windows with the dynamic feature, the symbols are resolved from the host process
+// (the simulator) when the plugin is loaded at runtime.
+#![cfg_attr(not(all(windows, feature = "dynamic")), allow(dead_code))]
 
-#[cfg(not(windows))]
+#[cfg(not(all(windows, feature = "dynamic")))]
 pub use vhpi_sys::{
     vhpi_assert, vhpi_check_error, vhpi_compare_handles, vhpi_control, vhpi_get,
     vhpi_get_next_time, vhpi_get_phys, vhpi_get_real, vhpi_get_str, vhpi_get_time, vhpi_get_value,
@@ -8,7 +18,7 @@ pub use vhpi_sys::{
     vhpi_register_cb, vhpi_release_handle, vhpi_remove_cb, vhpi_scan,
 };
 
-#[cfg(windows)]
+#[cfg(all(windows, feature = "dynamic"))]
 mod windows {
     use std::ffi::c_void;
     use std::os::raw::{c_char, c_int, c_long};
@@ -224,5 +234,5 @@ mod windows {
     }
 }
 
-#[cfg(windows)]
+#[cfg(all(windows, feature = "dynamic"))]
 pub use windows::*;

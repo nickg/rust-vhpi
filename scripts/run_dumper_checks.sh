@@ -92,6 +92,9 @@ case "${OSTYPE:-}" in
   msys*|cygwin*|win32*)
     PLUGIN_LIB_NAME="${LIB_STEM}.dll"
     ;;
+  darwin*)
+    PLUGIN_LIB_NAME="lib${LIB_STEM}.dylib"
+    ;;
   *)
     PLUGIN_LIB_NAME="lib${LIB_STEM}.so"
     ;;
