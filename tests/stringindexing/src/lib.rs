@@ -10,7 +10,7 @@ pub extern "C" fn test_string_indexing_startup() {
 }
 
 fn str_change(data: &vhpi::CbData) {
-    let handle = &data.obj;
+    let handle = data.obj();
     println!(
         "signal {:?} changed to {:?}",
         handle.get_name().unwrap(),

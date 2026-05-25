@@ -24,13 +24,13 @@ bitflags::bitflags! {
 #[must_use]
 pub fn simulator_capabilities() -> Provides {
     let tool_handle = unsafe {
-        vhpi_sys::vhpi_handle(
+        crate::ffi::vhpi_handle(
             OneToOne::Tool as vhpi_sys::vhpiOneToOneT,
             std::ptr::null_mut(),
         )
     };
     let caps = unsafe {
-        vhpi_sys::vhpi_get(
+        crate::ffi::vhpi_get(
             IntProperty::Capabilities as vhpi_sys::vhpiIntPropertyT,
             tool_handle,
         )

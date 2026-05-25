@@ -63,9 +63,18 @@ else
 fi
 
 LIB_STEM="${PLUGIN_CRATE//-/_}"
-PLUGIN_SO="${ROOT_DIR}/target/${PROFILE}/lib${LIB_STEM}.so"
+case "${OSTYPE:-}" in
+  msys*|cygwin*|win32*)
+    PLUGIN_LIB_NAME="${LIB_STEM}.dll"
+    ;;
+  *)
+    PLUGIN_LIB_NAME="lib${LIB_STEM}.so"
+    ;;
+esac
+
+PLUGIN_SO="${ROOT_DIR}/target/${PROFILE}/${PLUGIN_LIB_NAME}"
 if [[ ! -f "$PLUGIN_SO" ]]; then
-  FALLBACK="$(find "${ROOT_DIR}/target/${PROFILE}" -maxdepth 1 -type f -name "lib${LIB_STEM}.so" | head -n 1 || true)"
+  FALLBACK="$(find "${ROOT_DIR}/target/${PROFILE}" -maxdepth 1 -type f -name "${PLUGIN_LIB_NAME}" | head -n 1 || true)"
   if [[ -n "$FALLBACK" ]]; then
     PLUGIN_SO="$FALLBACK"
   else

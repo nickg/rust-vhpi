@@ -1,7 +1,8 @@
 #![cfg_attr(not(windows), allow(clippy::unnecessary_cast))]
 
 use crate::{check_error, Error, Handle};
-use vhpi_sys::{vhpiCbDataS, vhpi_register_cb};
+use std::mem::ManuallyDrop;
+use vhpi_sys::vhpiCbDataS;
 
 #[repr(u32)]
 pub enum CbReason {
@@ -57,7 +58,15 @@ pub enum CbReason {
 }
 
 pub struct CbData {
-    pub obj: Handle,
+    obj: ManuallyDrop<Handle>,
+}
+
+impl CbData {
+    #[must_use]
+    pub fn obj(&self) -> &Handle {
+        // ManuallyDrop has the same layout as Handle; only Drop behavior differs.
+        unsafe { &*(&self.obj as *const ManuallyDrop<Handle> as *const Handle) }
+    }
 }
 
 struct AfterDelayCbState<F>
@@ -87,14 +96,12 @@ where
         return;
     }
 
-    let mut data = CbData {
-        obj: Handle::from_raw((*cb_data).obj),
+    let data = CbData {
+        obj: ManuallyDrop::new(Handle::from_raw((*cb_data).obj)),
     };
 
     let callback = &*user_data;
     callback(&data);
-
-    data.obj.clear(); // We do not own this handle
 }
 
 unsafe extern "C" fn after_delay_trampoline<F>(cb_data: *const vhpi_sys::vhpiCbDataS)
@@ -110,13 +117,11 @@ where
         return;
     }
 
-    let mut data = CbData {
-        obj: Handle::from_raw((*cb_data).obj),
+    let data = CbData {
+        obj: ManuallyDrop::new(Handle::from_raw((*cb_data).obj)),
     };
 
     ((*user_data).callback)(&data);
-
-    data.obj.clear(); // We do not own this handle
 
     drop(Box::from_raw(user_data));
 }
@@ -136,7 +141,8 @@ where
         value: std::ptr::null_mut(),
         user_data,
     };
-    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
+    let ret =
+        unsafe { crate::ffi::vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
     match check_error() {
         Some(err) => {
             unsafe {
@@ -168,7 +174,8 @@ where
         value: std::ptr::null_mut(),
         user_data: user_data.cast::<std::os::raw::c_void>(),
     };
-    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
+    let ret =
+        unsafe { crate::ffi::vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
     match check_error() {
         Some(err) => {
             unsafe {
@@ -181,7 +188,7 @@ where
 }
 
 pub fn remove_cb(handle: &Handle) {
-    unsafe { vhpi_sys::vhpi_remove_cb(handle.as_raw()) };
+    unsafe { crate::ffi::vhpi_remove_cb(handle.as_raw()) };
 }
 
 impl Handle {
@@ -200,7 +207,9 @@ impl Handle {
             value: std::ptr::null_mut(),
             user_data,
         };
-        let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
+        let ret = unsafe {
+            crate::ffi::vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32)
+        };
         match check_error() {
             Some(err) => {
                 unsafe {
@@ -213,6 +222,6 @@ impl Handle {
     }
 
     pub fn remove_cb(&self) {
-        unsafe { vhpi_sys::vhpi_remove_cb(self.as_raw()) };
+        unsafe { crate::ffi::vhpi_remove_cb(self.as_raw()) };
     }
 }

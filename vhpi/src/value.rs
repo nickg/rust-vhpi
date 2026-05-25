@@ -336,7 +336,7 @@ impl Handle {
             value: vhpi_sys::vhpiValueS__bindgen_ty_1 { longintg: 0 },
         };
 
-        let mut rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &raw mut val) };
+        let mut rc = unsafe { crate::ffi::vhpi_get_value(self.as_raw(), &raw mut val) };
         // Allocate buffer so that it is kept for the whole function
         let mut buffer: Vec<u8> = vec![];
         if rc > 0 {
@@ -423,7 +423,7 @@ impl Handle {
                 }
             }
 
-            rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &raw mut val) };
+            rc = unsafe { crate::ffi::vhpi_get_value(self.as_raw(), &raw mut val) };
         }
 
         if rc < 0 {
@@ -718,7 +718,7 @@ impl Handle {
         }
 
         let rc =
-            unsafe { vhpi_sys::vhpi_put_value(self.as_raw(), &raw mut val_struct, mode.into()) };
+            unsafe { crate::ffi::vhpi_put_value(self.as_raw(), &raw mut val_struct, mode.into()) };
 
         // Keep buffer_holder alive until after vhpi_put_value
         let _ = &buffer_holder;
