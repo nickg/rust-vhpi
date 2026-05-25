@@ -257,6 +257,96 @@ impl ClassKind {
     }
 }
 
+#[repr(u32)]
+#[derive(Debug, FromPrimitive, PartialEq)]
+pub enum Mode {
+    In = vhpi_sys::vhpiModeT_vhpiInMode as u32,
+    Out = vhpi_sys::vhpiModeT_vhpiOutMode as u32,
+    Inout = vhpi_sys::vhpiModeT_vhpiInoutMode as u32,
+    Buffer = vhpi_sys::vhpiModeT_vhpiBufferMode as u32,
+    Linkage = vhpi_sys::vhpiModeT_vhpiLinkageMode as u32,
+}
+
+impl Mode {
+    #[must_use]
+    pub fn from_i32(value: i32) -> Option<Mode> {
+        num_traits::FromPrimitive::from_i32(value)
+    }
+}
+
+#[repr(u32)]
+#[derive(Debug, FromPrimitive, PartialEq)]
+pub enum SigKind {
+    Register = vhpi_sys::vhpiSigKindT_vhpiRegister as u32,
+    Bus = vhpi_sys::vhpiSigKindT_vhpiBus as u32,
+    Normal = vhpi_sys::vhpiSigKindT_vhpiNormal as u32,
+}
+
+impl SigKind {
+    #[must_use]
+    pub fn from_i32(value: i32) -> Option<SigKind> {
+        num_traits::FromPrimitive::from_i32(value)
+    }
+}
+
+#[repr(u32)]
+#[derive(Debug, FromPrimitive, PartialEq)]
+pub enum Staticness {
+    LocallyStatic = vhpi_sys::vhpiStaticnessT_vhpiLocallyStatic as u32,
+    GloballyStatic = vhpi_sys::vhpiStaticnessT_vhpiGloballyStatic as u32,
+    Dynamic = vhpi_sys::vhpiStaticnessT_vhpiDynamic as u32,
+}
+
+impl Staticness {
+    #[must_use]
+    pub fn from_i32(value: i32) -> Option<Staticness> {
+        num_traits::FromPrimitive::from_i32(value)
+    }
+}
+
+#[repr(u32)]
+#[derive(Debug, FromPrimitive, PartialEq)]
+pub enum PredefAttr {
+    Active = vhpi_sys::vhpiPredefAttrT_vhpiActivePA as u32,
+    Ascending = vhpi_sys::vhpiPredefAttrT_vhpiAscendingPA as u32,
+    Base = vhpi_sys::vhpiPredefAttrT_vhpiBasePA as u32,
+    Delayed = vhpi_sys::vhpiPredefAttrT_vhpiDelayedPA as u32,
+    Driving = vhpi_sys::vhpiPredefAttrT_vhpiDrivingPA as u32,
+    DrivingValue = vhpi_sys::vhpiPredefAttrT_vhpiDriving_valuePA as u32,
+    Event = vhpi_sys::vhpiPredefAttrT_vhpiEventPA as u32,
+    High = vhpi_sys::vhpiPredefAttrT_vhpiHighPA as u32,
+    Image = vhpi_sys::vhpiPredefAttrT_vhpiImagePA as u32,
+    InstanceName = vhpi_sys::vhpiPredefAttrT_vhpiInstance_namePA as u32,
+    LastActive = vhpi_sys::vhpiPredefAttrT_vhpiLast_activePA as u32,
+    LastEvent = vhpi_sys::vhpiPredefAttrT_vhpiLast_eventPA as u32,
+    LastValue = vhpi_sys::vhpiPredefAttrT_vhpiLast_valuePA as u32,
+    Left = vhpi_sys::vhpiPredefAttrT_vhpiLeftPA as u32,
+    LeftOf = vhpi_sys::vhpiPredefAttrT_vhpiLeftofPA as u32,
+    Length = vhpi_sys::vhpiPredefAttrT_vhpiLengthPA as u32,
+    Low = vhpi_sys::vhpiPredefAttrT_vhpiLowPA as u32,
+    PathName = vhpi_sys::vhpiPredefAttrT_vhpiPath_namePA as u32,
+    Pos = vhpi_sys::vhpiPredefAttrT_vhpiPosPA as u32,
+    Pred = vhpi_sys::vhpiPredefAttrT_vhpiPredPA as u32,
+    Quiet = vhpi_sys::vhpiPredefAttrT_vhpiQuietPA as u32,
+    Range = vhpi_sys::vhpiPredefAttrT_vhpiRangePA as u32,
+    ReverseRange = vhpi_sys::vhpiPredefAttrT_vhpiReverse_rangePA as u32,
+    Right = vhpi_sys::vhpiPredefAttrT_vhpiRightPA as u32,
+    RightOf = vhpi_sys::vhpiPredefAttrT_vhpiRightofPA as u32,
+    SimpleName = vhpi_sys::vhpiPredefAttrT_vhpiSimple_namePA as u32,
+    Stable = vhpi_sys::vhpiPredefAttrT_vhpiStablePA as u32,
+    Succ = vhpi_sys::vhpiPredefAttrT_vhpiSuccPA as u32,
+    Transaction = vhpi_sys::vhpiPredefAttrT_vhpiTransactionPA as u32,
+    Val = vhpi_sys::vhpiPredefAttrT_vhpiValPA as u32,
+    Value = vhpi_sys::vhpiPredefAttrT_vhpiValuePA as u32,
+}
+
+impl PredefAttr {
+    #[must_use]
+    pub fn from_i32(value: i32) -> Option<PredefAttr> {
+        num_traits::FromPrimitive::from_i32(value)
+    }
+}
+
 impl Handle {
     #[must_use]
     pub fn get(&self, property: IntProperty) -> i32 {
@@ -303,6 +393,30 @@ impl Handle {
     #[must_use]
     pub fn get_full_name(&self) -> Option<String> {
         self.get_str(StrProperty::FullName)
+    }
+
+    #[must_use]
+    pub fn get_mode(&self) -> Option<Mode> {
+        let mode_int = self.get(IntProperty::Mode);
+        Mode::from_i32(mode_int)
+    }
+
+    #[must_use]
+    pub fn get_sig_kind(&self) -> Option<SigKind> {
+        let sig_kind_int = self.get(IntProperty::SigKind);
+        SigKind::from_i32(sig_kind_int)
+    }
+
+    #[must_use]
+    pub fn get_staticness(&self) -> Option<Staticness> {
+        let staticness_int = self.get(IntProperty::Staticness);
+        Staticness::from_i32(staticness_int)
+    }
+
+    #[must_use]
+    pub fn get_predef_attr(&self) -> Option<PredefAttr> {
+        let predef_attr_int = self.get(IntProperty::PredefAttr);
+        PredefAttr::from_i32(predef_attr_int)
     }
 
     #[must_use]
