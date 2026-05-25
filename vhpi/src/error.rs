@@ -101,7 +101,7 @@ pub fn check_error() -> Option<Error> {
         line: -1,
     };
 
-    let rc = unsafe { vhpi_sys::vhpi_check_error(&raw mut info) };
+    let rc = unsafe { crate::ffi::vhpi_check_error(&raw mut info) };
     if rc.is_zero() {
         return None;
     }
@@ -139,7 +139,7 @@ pub fn check_error() -> Option<Error> {
 
 pub fn assert(severity: Severity, message: impl AsRef<str>) {
     let c_message = string_to_iso8859_1_cstring(message);
-    unsafe { vhpi_sys::vhpi_assert(severity.into(), c_message.as_ptr().cast_mut()) };
+    unsafe { crate::ffi::vhpi_assert(severity.into(), c_message.as_ptr().cast_mut()) };
 }
 
 #[macro_export]

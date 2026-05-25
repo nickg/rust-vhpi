@@ -3,7 +3,6 @@
 use num_derive::FromPrimitive;
 use num_traits::Zero;
 use std::ffi::CStr;
-use vhpi_sys::{vhpi_get, vhpi_get_str, vhpi_iterator, vhpi_scan};
 
 use crate::{iso8859_1_cstr_to_string, Handle, Physical};
 
@@ -350,12 +349,14 @@ impl PredefAttr {
 impl Handle {
     #[must_use]
     pub fn get(&self, property: IntProperty) -> i32 {
-        unsafe { vhpi_get(property as vhpi_sys::vhpiIntPropertyT, self.as_raw()) }
+        unsafe { crate::ffi::vhpi_get(property as vhpi_sys::vhpiIntPropertyT, self.as_raw()) }
     }
 
     #[must_use]
     pub fn get_str(&self, property: StrProperty) -> Option<String> {
-        let ptr = unsafe { vhpi_get_str(property as vhpi_sys::vhpiStrPropertyT, self.as_raw()) };
+        let ptr = unsafe {
+            crate::ffi::vhpi_get_str(property as vhpi_sys::vhpiStrPropertyT, self.as_raw())
+        };
         if ptr.is_null() {
             return None;
         }
@@ -367,14 +368,14 @@ impl Handle {
     #[must_use]
     pub fn get_phys(&self, property: PhysProperty) -> Physical {
         let result = unsafe {
-            vhpi_sys::vhpi_get_phys(property as vhpi_sys::vhpiPhysPropertyT, self.as_raw())
+            crate::ffi::vhpi_get_phys(property as vhpi_sys::vhpiPhysPropertyT, self.as_raw())
         };
         result.into()
     }
 
     #[must_use]
     pub fn get_real(&self, property: RealProperty) -> f64 {
-        unsafe { vhpi_sys::vhpi_get_real(property as vhpi_sys::vhpiRealPropertyT, self.as_raw()) }
+        unsafe { crate::ffi::vhpi_get_real(property as vhpi_sys::vhpiRealPropertyT, self.as_raw()) }
     }
 
     // The following are convenience functions not defined by VHPI
@@ -422,12 +423,12 @@ impl Handle {
     #[must_use]
     pub fn index_range(&self) -> Box<dyn Iterator<Item = i32>> {
         let raw = unsafe {
-            vhpi_iterator(
+            crate::ffi::vhpi_iterator(
                 crate::OneToMany::Constraints as vhpi_sys::vhpiOneToManyT,
                 self.as_raw(),
             )
         };
-        let handle = Handle::from_raw(unsafe { vhpi_scan(raw) });
+        let handle = Handle::from_raw(unsafe { crate::ffi::vhpi_scan(raw) });
         let is_up = handle.get(IntProperty::IsUp);
         let left = handle.get(IntProperty::LeftBound);
         let right = handle.get(IntProperty::RightBound);
