@@ -1,5 +1,5 @@
 [workspace]
-members = ["vhpi-sys", "vhpi", "dumper", "tests/test_simple", "tests/stringindexing"]
+members = ["vhpi-sys", "vhpi", "vhpi-winlib", "dumper", "tests/test_simple", "tests/stringindexing"]
 resolver = "2"
 
 [workspace.package]
@@ -12,6 +12,7 @@ rust-version = "1.82"
 [workspace.dependencies]
 vhpi = { path = "vhpi", version = "0.2.1" }
 vhpi-sys = { path = "vhpi-sys", version = "0.2.1" }
+vhpi-winlib = { path = "vhpi-winlib", version = "0.2.1" }
 bindgen = "0.72"
 bitflags = "2.11"
 num-bigint = "0.4"

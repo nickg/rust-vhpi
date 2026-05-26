@@ -296,7 +296,12 @@ name = "vhpi-sys"
 version = "0.2.1"
 dependencies = [
  "bindgen",
+ "vhpi-winlib",
 ]
+
+[[package]]
+name = "vhpi-winlib"
+version = "0.2.1"
 
 [[package]]
 name = "windows-link"

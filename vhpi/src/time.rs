@@ -92,7 +92,7 @@ impl Time {
 #[must_use]
 pub fn get_time() -> Time {
     let mut time = vhpi_sys::vhpiTimeT { low: 0, high: 0 };
-    unsafe { crate::ffi::vhpi_get_time(&raw mut time, std::ptr::null_mut()) };
+    unsafe { vhpi_sys::vhpi_get_time(&raw mut time, std::ptr::null_mut()) };
 
     time.into()
 }
@@ -100,7 +100,7 @@ pub fn get_time() -> Time {
 #[must_use]
 pub fn get_cycles() -> i64 {
     let mut cycles: std::os::raw::c_long = 0;
-    unsafe { crate::ffi::vhpi_get_time(std::ptr::null_mut(), &raw mut cycles) };
+    unsafe { vhpi_sys::vhpi_get_time(std::ptr::null_mut(), &raw mut cycles) };
 
     cycles as i64
 }
@@ -108,7 +108,7 @@ pub fn get_cycles() -> i64 {
 #[must_use]
 pub fn get_next_time() -> (Time, i32) {
     let mut time = vhpi_sys::vhpiTimeT { low: 0, high: 0 };
-    let result = unsafe { crate::ffi::vhpi_get_next_time(&raw mut time) };
+    let result = unsafe { vhpi_sys::vhpi_get_next_time(&raw mut time) };
 
     (time.into(), result)
 }

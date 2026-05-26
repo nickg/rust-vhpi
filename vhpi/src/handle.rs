@@ -2,7 +2,10 @@
 
 use num_traits::Zero;
 use std::ffi::CString;
-use vhpi_sys::vhpiHandleT;
+use vhpi_sys::{
+    vhpiHandleT, vhpi_compare_handles, vhpi_handle, vhpi_handle_by_index, vhpi_handle_by_name,
+    vhpi_iterator, vhpi_release_handle, vhpi_scan,
+};
 
 #[repr(u32)]
 pub enum OneToOne {
@@ -164,7 +167,7 @@ impl Drop for Handle {
     fn drop(&mut self) {
         if !self.is_null() {
             unsafe {
-                crate::ffi::vhpi_release_handle(self.handle);
+                vhpi_release_handle(self.handle);
             }
         }
     }
@@ -178,7 +181,7 @@ impl Default for Handle {
 
 impl PartialEq for Handle {
     fn eq(&self, other: &Self) -> bool {
-        unsafe { !crate::ffi::vhpi_compare_handles(self.handle, other.handle).is_zero() }
+        unsafe { !vhpi_compare_handles(self.handle, other.handle).is_zero() }
     }
 }
 
@@ -211,15 +214,13 @@ impl Handle {
 
     #[must_use]
     pub fn handle(&self, property: OneToOne) -> Handle {
-        Handle::from_raw(unsafe {
-            crate::ffi::vhpi_handle(property as vhpi_sys::vhpiOneToOneT, self.as_raw())
-        })
+        Handle::from_raw(unsafe { vhpi_handle(property as vhpi_sys::vhpiOneToOneT, self.as_raw()) })
     }
 
     #[must_use]
     pub fn handle_by_name(&self, name: &str) -> Option<Handle> {
         let c_name = CString::new(name).unwrap();
-        let handle = unsafe { crate::ffi::vhpi_handle_by_name(c_name.as_ptr(), self.as_raw()) };
+        let handle = unsafe { vhpi_handle_by_name(c_name.as_ptr(), self.as_raw()) };
         if handle.is_null() {
             None
         } else {
@@ -230,11 +231,7 @@ impl Handle {
     #[must_use]
     pub fn handle_by_index(&self, property: OneToMany, index: i32) -> Option<Handle> {
         let handle = unsafe {
-            crate::ffi::vhpi_handle_by_index(
-                property as vhpi_sys::vhpiOneToManyT,
-                self.as_raw(),
-                index,
-            )
+            vhpi_handle_by_index(property as vhpi_sys::vhpiOneToManyT, self.as_raw(), index)
         };
         if handle.is_null() {
             None
@@ -245,8 +242,7 @@ impl Handle {
 
     #[must_use]
     pub fn iterator(&self, typ: OneToMany) -> HandleIterator {
-        let raw =
-            unsafe { crate::ffi::vhpi_iterator(typ as vhpi_sys::vhpiOneToManyT, self.as_raw()) };
+        let raw = unsafe { vhpi_iterator(typ as vhpi_sys::vhpiOneToManyT, self.as_raw()) };
         HandleIterator {
             iter: Handle::from_raw(raw),
         }
@@ -261,7 +257,7 @@ impl Iterator for HandleIterator {
             return None;
         }
 
-        let next = Handle::from_raw(unsafe { crate::ffi::vhpi_scan(self.iter.as_raw()) });
+        let next = Handle::from_raw(unsafe { vhpi_scan(self.iter.as_raw()) });
 
         if next.is_null() {
             // The handle is automatically released when the iterator is exhausted
@@ -276,14 +272,14 @@ impl Iterator for HandleIterator {
 #[must_use]
 pub fn handle(property: OneToOne) -> Handle {
     Handle::from_raw(unsafe {
-        crate::ffi::vhpi_handle(property as vhpi_sys::vhpiOneToOneT, std::ptr::null_mut())
+        vhpi_handle(property as vhpi_sys::vhpiOneToOneT, std::ptr::null_mut())
     })
 }
 
 #[must_use]
 pub fn handle_by_name(name: &str) -> Option<Handle> {
     let c_name = CString::new(name).unwrap();
-    let handle = unsafe { crate::ffi::vhpi_handle_by_name(c_name.as_ptr(), std::ptr::null_mut()) };
+    let handle = unsafe { vhpi_handle_by_name(c_name.as_ptr(), std::ptr::null_mut()) };
     if handle.is_null() {
         None
     } else {
