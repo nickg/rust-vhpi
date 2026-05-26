@@ -24,4 +24,4 @@ vhpi-sys.workspace = true
 default = ["nvc"]
 bigint = ["num-bigint"]
 nvc = ["vhpi-sys/nvc"]
-dynamic = []
+dynamic = ["vhpi-sys/dynamic"]

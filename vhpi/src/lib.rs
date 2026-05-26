@@ -4,7 +4,6 @@ mod macros;
 mod callback;
 mod control;
 mod error;
-mod ffi;
 mod handle;
 mod logic;
 mod physical;
@@ -30,17 +29,9 @@ extern crate num_derive;
 
 /// Print a message to the simulator console using `vhpi_printf`
 pub fn printf(msg: impl AsRef<str>) {
-    #[cfg(windows)]
-    {
-        println!("{}", msg.as_ref());
-    }
-
-    #[cfg(not(windows))]
-    {
-        static FMT: &[u8] = b"%s\n\0";
-        let cstr = string_to_iso8859_1_cstring(msg);
-        unsafe { vhpi_sys::vhpi_printf(FMT.as_ptr().cast::<i8>(), cstr.as_ptr()) };
-    }
+    static FMT: &[u8] = b"%s\n\0";
+    let cstr = string_to_iso8859_1_cstring(msg);
+    unsafe { vhpi_sys::vhpi_printf(FMT.as_ptr().cast::<i8>(), cstr.as_ptr()) };
 }
 
 /// Convert Rust string to ISO-8859-1 encoded C string

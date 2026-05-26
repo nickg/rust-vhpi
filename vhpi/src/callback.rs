@@ -2,7 +2,7 @@
 
 use crate::{check_error, Error, Handle};
 use std::mem::ManuallyDrop;
-use vhpi_sys::vhpiCbDataS;
+use vhpi_sys::{vhpiCbDataS, vhpi_register_cb};
 
 #[repr(u32)]
 pub enum CbReason {
@@ -141,8 +141,7 @@ where
         value: std::ptr::null_mut(),
         user_data,
     };
-    let ret =
-        unsafe { crate::ffi::vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
+    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
     match check_error() {
         Some(err) => {
             unsafe {
@@ -174,8 +173,7 @@ where
         value: std::ptr::null_mut(),
         user_data: user_data.cast::<std::os::raw::c_void>(),
     };
-    let ret =
-        unsafe { crate::ffi::vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
+    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
     match check_error() {
         Some(err) => {
             unsafe {
@@ -188,7 +186,7 @@ where
 }
 
 pub fn remove_cb(handle: &Handle) {
-    unsafe { crate::ffi::vhpi_remove_cb(handle.as_raw()) };
+    unsafe { vhpi_sys::vhpi_remove_cb(handle.as_raw()) };
 }
 
 impl Handle {
@@ -207,9 +205,7 @@ impl Handle {
             value: std::ptr::null_mut(),
             user_data,
         };
-        let ret = unsafe {
-            crate::ffi::vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32)
-        };
+        let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
         match check_error() {
             Some(err) => {
                 unsafe {
@@ -222,6 +218,6 @@ impl Handle {
     }
 
     pub fn remove_cb(&self) {
-        unsafe { crate::ffi::vhpi_remove_cb(self.as_raw()) };
+        unsafe { vhpi_sys::vhpi_remove_cb(self.as_raw()) };
     }
 }
