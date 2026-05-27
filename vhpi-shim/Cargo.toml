@@ -4,7 +4,10 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+description = "A shim library for the vhpi crate to build plugins without linking to the simulator."
+readme = "README.md"
 publish = true
+rust-version.workspace = true
 
 [lib]
 path = "src/lib.rs"
