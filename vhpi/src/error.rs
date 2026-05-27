@@ -139,7 +139,7 @@ pub fn check_error() -> Option<Error> {
 
 pub fn assert(severity: Severity, message: impl AsRef<str>) {
     let c_message = string_to_iso8859_1_cstring(message);
-    unsafe { vhpi_sys::vhpi_assert(severity.into(), c_message.as_ptr().cast_mut()) };
+    unsafe { vhpi_sys::vhpi_assert_cstr(severity.into(), c_message.as_ptr().cast_mut()) };
 }
 
 #[macro_export]
