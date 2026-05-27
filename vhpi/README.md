@@ -13,7 +13,7 @@ Add `vhpi` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-vhpi = "0.1.0"
+vhpi = "0.3.0"
 ```
 
 VHPI programs are usually compiled as plugins and loaded into the
@@ -23,3 +23,12 @@ simulator which requires:
 [lib]
 crate-type = ["cdylib"]
 ```
+
+If you get linker errors on Windows and macOS because you are trying to build a stand-alone plugin, use the `dynamic` feature:
+
+```toml
+[dependencies]
+vhpi = { version = "0.3.0", features = ["dynamic"] }
+```
+
+or, if you have nvc installed, link with `$PREFIX/lib/nvc/libnvcimp.a`.

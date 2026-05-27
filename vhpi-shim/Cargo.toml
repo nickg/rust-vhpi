@@ -1,5 +1,5 @@
 [package]
-name = "vhpi-winlib"
+name = "vhpi-shim"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

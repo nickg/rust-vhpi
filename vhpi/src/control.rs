@@ -44,7 +44,7 @@ impl From<i32> for ControlReturn {
 impl Handle {
     #[must_use]
     pub fn control(&self, control: Control) -> ControlReturn {
-        let result = unsafe { vhpi_sys::vhpi_control(control.into()) };
+        let result = unsafe { vhpi_sys::vhpi_control1(control.into()) };
         result.into()
     }
 }

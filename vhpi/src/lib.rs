@@ -31,7 +31,7 @@ extern crate num_derive;
 pub fn printf(msg: impl AsRef<str>) {
     static FMT: &[u8] = b"%s\n\0";
     let cstr = string_to_iso8859_1_cstring(msg);
-    unsafe { vhpi_sys::vhpi_printf(FMT.as_ptr().cast::<i8>(), cstr.as_ptr()) };
+    unsafe { vhpi_sys::vhpi_printf_cstr(FMT.as_ptr().cast::<i8>(), cstr.as_ptr()) };
 }
 
 /// Convert Rust string to ISO-8859-1 encoded C string

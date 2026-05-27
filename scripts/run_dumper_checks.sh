@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_CRATE="dumper"
@@ -131,9 +131,23 @@ for tb in "${TEST_BENCHES[@]}"; do
 
   echo "--- ${tb}: simulate"
   if [[ "$TRACE" == "true" ]]; then
-    nvc --vhpi-trace -r "$tb" --load="$PLUGIN_SO" >"$LOG_FILE" 2>&1
+    if nvc --vhpi-trace -r "$tb" --load="$PLUGIN_SO" >"$LOG_FILE" 2>&1; then
+      :
+    else
+      status=$?
+      echo "${tb}: simulation failed, log follows (${LOG_FILE})" >&2
+      cat "$LOG_FILE" >&2 || true
+      exit "$status"
+    fi
   else
-    nvc -r "$tb" --load="$PLUGIN_SO" >"$LOG_FILE" 2>&1
+    if nvc -r "$tb" --load="$PLUGIN_SO" >"$LOG_FILE" 2>&1; then
+      :
+    else
+      status=$?
+      echo "${tb}: simulation failed, log follows (${LOG_FILE})" >&2
+      cat "$LOG_FILE" >&2 || true
+      exit "$status"
+    fi
   fi
 
   popd >/dev/null

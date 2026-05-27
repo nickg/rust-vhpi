@@ -15,9 +15,9 @@ rust-version.workspace = true
 bindgen.workspace = true
 
 [dependencies]
-vhpi-winlib = { workspace = true, optional = true }
+vhpi-shim = { workspace = true, optional = true }
 
 [features]
 default = ["nvc"]
 nvc = []
-dynamic = ["dep:vhpi-winlib"]
+dynamic = ["dep:vhpi-shim"]
