@@ -2,16 +2,27 @@ use std::convert::TryFrom;
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Nine-value logic domain used by VHDL signals.
 pub enum LogicVal {
+    /// Uninitialized.
     U,
+    /// Forcing unknown.
     X,
+    /// Logic 0.
     Zero,
+    /// Logic 1.
     One,
+    /// High impedance.
     Z,
+    /// Weak unknown.
     W,
+    /// Weak 0.
     L,
+    /// Weak 1.
     H,
+    /// Don't care.
     DontCare,
+    /// A value not recognized by this crate.
     Unknown(u8),
 }
 

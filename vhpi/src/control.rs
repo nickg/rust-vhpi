@@ -1,8 +1,12 @@
 use crate::Handle;
 
+/// Simulation control operations that can be requested via VHPI.
 pub enum Control {
+    /// Pause simulation execution.
     Stop,
+    /// Terminate simulation.
     Finish,
+    /// Reset simulation state.
     Reset,
 }
 
@@ -27,8 +31,11 @@ impl From<vhpi_sys::vhpiSimControlT> for Control {
     }
 }
 
+/// Result returned by simulator control operations.
 pub enum ControlReturn {
+    /// The operation completed successfully.
     Success,
+    /// The operation failed.
     Failure,
 }
 
@@ -43,6 +50,7 @@ impl From<i32> for ControlReturn {
 }
 impl Handle {
     #[must_use]
+    /// Request a simulation control operation.
     pub fn control(&self, control: Control) -> ControlReturn {
         let result = unsafe { vhpi_sys::vhpi_control1(control.into()) };
         result.into()

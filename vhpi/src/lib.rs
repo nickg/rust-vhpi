@@ -1,3 +1,5 @@
+//! Safe Rust wrappers around VHPI APIs.
+
 #[macro_use]
 mod macros;
 
@@ -50,6 +52,10 @@ pub fn string_to_iso8859_1_cstring(msg: impl AsRef<str>) -> CString {
 }
 
 #[macro_export]
+/// Print a formatted message to the simulator console.
+///
+/// This macro mirrors `println!`-style formatting and forwards to
+/// [`printf`].
 macro_rules! printf {
     ($($arg:tt)*) => {{
         $crate::printf(&format!($($arg)*));

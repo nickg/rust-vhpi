@@ -5,58 +5,109 @@ use std::mem::ManuallyDrop;
 use vhpi_sys::{vhpiCbDataS, vhpi_register_cb};
 
 #[repr(u32)]
+/// Callback reasons.
 pub enum CbReason {
+    /// Triggered at the start of simulation.
     StartOfSimulation = vhpi_sys::vhpiCbStartOfSimulation as u32,
+    /// Triggered at the end of simulation.
     EndOfSimulation = vhpi_sys::vhpiCbEndOfSimulation as u32,
+    /// Triggered on the next simulation time step.
     NextTimeStep = vhpi_sys::vhpiCbNextTimeStep as u32,
+    /// Repeating trigger for each next simulation time step.
     RepNextTimeStep = vhpi_sys::vhpiCbRepNextTimeStep as u32,
+    /// Triggered when a watched value changes.
     ValueChange = vhpi_sys::vhpiCbValueChange as u32,
+    /// Triggered when a force operation is applied.
     Force = vhpi_sys::vhpiCbForce as u32,
+    /// Triggered when a force operation is released.
     Release = vhpi_sys::vhpiCbRelease as u32,
+    /// Triggered when a transaction is scheduled.
     Transaction = vhpi_sys::vhpiCbTransaction as u32,
+    /// Triggered on statement execution.
     Stmt = vhpi_sys::vhpiCbStmt as u32,
+    /// Triggered when simulation resumes.
     Resume = vhpi_sys::vhpiCbResume as u32,
+    /// Triggered when simulation suspends.
     Suspend = vhpi_sys::vhpiCbSuspend as u32,
+    /// Triggered at the start of a subprogram call.
     StartOfSubpCall = vhpi_sys::vhpiCbStartOfSubpCall as u32,
+    /// Triggered at the end of a subprogram call.
     EndOfSubpCall = vhpi_sys::vhpiCbEndOfSubpCall as u32,
+    /// Triggered once after a specified delay.
     AfterDelay = vhpi_sys::vhpiCbAfterDelay as u32,
+    /// Repeating trigger after each specified delay interval.
     RepAfterDelay = vhpi_sys::vhpiCbRepAfterDelay as u32,
+    /// Triggered at the start of the next simulation cycle.
     StartOfNextCycle = vhpi_sys::vhpiCbStartOfNextCycle as u32,
+    /// Repeating trigger at the start of each next cycle.
     RepStartOfNextCycle = vhpi_sys::vhpiCbRepStartOfNextCycle as u32,
+    /// Triggered at the start of process execution.
     StartOfProcesses = vhpi_sys::vhpiCbStartOfProcesses as u32,
+    /// Repeating trigger at the start of process execution.
     RepStartOfProcesses = vhpi_sys::vhpiCbRepStartOfProcesses as u32,
+    /// Triggered at the end of process execution.
     EndOfProcesses = vhpi_sys::vhpiCbEndOfProcesses as u32,
+    /// Repeating trigger at the end of process execution.
     RepEndOfProcesses = vhpi_sys::vhpiCbRepEndOfProcesses as u32,
+    /// Triggered at the last known delta cycle in a time step.
     LastKnownDeltaCycle = vhpi_sys::vhpiCbLastKnownDeltaCycle as u32,
+    /// Repeating trigger at the last known delta cycle.
     RepLastKnownDeltaCycle = vhpi_sys::vhpiCbRepLastKnownDeltaCycle as u32,
+    /// Triggered at the start of postponed process execution.
     StartOfPostponed = vhpi_sys::vhpiCbStartOfPostponed as u32,
+    /// Repeating trigger at the start of postponed execution.
     RepStartOfPostponed = vhpi_sys::vhpiCbRepStartOfPostponed as u32,
+    /// Triggered at the end of the current time step.
     EndOfTimeStep = vhpi_sys::vhpiCbEndOfTimeStep as u32,
+    /// Repeating trigger at the end of each time step.
     RepEndOfTimeStep = vhpi_sys::vhpiCbRepEndOfTimeStep as u32,
+    /// Triggered when tool-specific execution starts.
     StartOfTool = vhpi_sys::vhpiCbStartOfTool as u32,
+    /// Triggered when tool-specific execution ends.
     EndOfTool = vhpi_sys::vhpiCbEndOfTool as u32,
+    /// Triggered when analysis starts.
     StartOfAnalysis = vhpi_sys::vhpiCbStartOfAnalysis as u32,
+    /// Triggered when analysis ends.
     EndOfAnalysis = vhpi_sys::vhpiCbEndOfAnalysis as u32,
+    /// Triggered when elaboration starts.
     StartOfElaboration = vhpi_sys::vhpiCbStartOfElaboration as u32,
+    /// Triggered when elaboration ends.
     EndOfElaboration = vhpi_sys::vhpiCbEndOfElaboration as u32,
+    /// Triggered when initialization starts.
     StartOfInitialization = vhpi_sys::vhpiCbStartOfInitialization as u32,
+    /// Triggered when initialization ends.
     EndOfInitialization = vhpi_sys::vhpiCbEndOfInitialization as u32,
+    /// Triggered when the simulator reaches quiescence.
     Quiescense = vhpi_sys::vhpiCbQuiescense as u32,
+    /// Triggered when a PLI error is reported.
     PLIError = vhpi_sys::vhpiCbPLIError as u32,
+    /// Triggered when save operation starts.
     StartOfSave = vhpi_sys::vhpiCbStartOfSave as u32,
+    /// Triggered when save operation ends.
     EndOfSave = vhpi_sys::vhpiCbEndOfSave as u32,
+    /// Triggered when restart operation starts.
     StartOfRestart = vhpi_sys::vhpiCbStartOfRestart as u32,
+    /// Triggered when restart operation ends.
     EndOfRestart = vhpi_sys::vhpiCbEndOfRestart as u32,
+    /// Triggered when reset operation starts.
     StartOfReset = vhpi_sys::vhpiCbStartOfReset as u32,
+    /// Triggered when reset operation ends.
     EndOfReset = vhpi_sys::vhpiCbEndOfReset as u32,
+    /// Triggered when entering interactive mode.
     EnterInteractive = vhpi_sys::vhpiCbEnterInteractive as u32,
+    /// Triggered when leaving interactive mode.
     ExitInteractive = vhpi_sys::vhpiCbExitInteractive as u32,
+    /// Triggered on signal interrupt.
     SigInterrupt = vhpi_sys::vhpiCbSigInterrupt as u32,
+    /// Triggered when a timeout expires.
     TimeOut = vhpi_sys::vhpiCbTimeOut as u32,
+    /// Repeating trigger for timeout expiry.
     RepTimeOut = vhpi_sys::vhpiCbRepTimeOut as u32,
+    /// Triggered when sensitivity conditions are met.
     Sensitivity = vhpi_sys::vhpiCbSensitivity as u32,
 }
 
+/// Data passed to callback functions.
 pub struct CbData {
     obj: ManuallyDrop<Handle>,
 }
@@ -78,8 +129,11 @@ where
 }
 
 #[derive(Debug)]
+/// Errors returned when registering a VHPI callback.
 pub enum RegisterCbError {
+    /// A callback reason value was not recognized.
     UnknownReason,
+    /// The simulator reported an error while registering the callback.
     Error(Error),
 }
 
@@ -126,6 +180,15 @@ where
     drop(Box::from_raw(user_data));
 }
 
+/// Register a global callback for a simulator event.
+///
+/// The callback is retained by the simulator and can be removed later using
+/// [`remove_cb`]. The returned handle represents the registered callback.
+///
+/// # Errors
+///
+/// Returns [`RegisterCbError::Error`] when the simulator reports an error while
+/// registering the callback.
 pub fn register_cb<F>(reason: CbReason, callback: F) -> Result<Handle, RegisterCbError>
 where
     F: Fn(&CbData) + 'static,
@@ -153,6 +216,15 @@ where
     }
 }
 
+/// Register a callback that fires once after the specified simulation delay.
+///
+/// The callback state is released after the callback runs. If you need to
+/// cancel it before it fires, call [`remove_cb`] with the returned handle.
+///
+/// # Errors
+///
+/// Returns [`RegisterCbError::Error`] when the simulator reports an error while
+/// registering the callback.
 pub fn register_cb_after_delay<F>(
     delay: crate::Time,
     callback: F,
@@ -185,11 +257,20 @@ where
     }
 }
 
+/// Remove a previously registered callback.
+///
+/// Passing a handle that does not refer to a callback is simulator-dependent.
 pub fn remove_cb(handle: &Handle) {
     unsafe { vhpi_sys::vhpi_remove_cb(handle.as_raw()) };
 }
 
 impl Handle {
+    /// Register a callback scoped to this object handle.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RegisterCbError::Error`] when the simulator reports an error
+    /// while registering the callback.
     pub fn register_cb<F>(&self, reason: CbReason, callback: F) -> Result<Handle, RegisterCbError>
     where
         F: Fn(&CbData) + 'static,
@@ -217,6 +298,7 @@ impl Handle {
         }
     }
 
+    /// Remove the callback represented by this handle.
     pub fn remove_cb(&self) {
         unsafe { vhpi_sys::vhpi_remove_cb(self.as_raw()) };
     }
