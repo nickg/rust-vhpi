@@ -6,13 +6,21 @@ use num_traits::Zero;
 use crate::string_to_iso8859_1_cstring;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Severity level used by simulator diagnostics.
 pub enum Severity {
+    /// Informational diagnostic.
     Note,
+    /// Non-fatal warning.
     Warning,
+    /// Error-level diagnostic.
     Error,
+    /// System-level diagnostic.
     System,
+    /// Internal simulator diagnostic.
     Internal,
+    /// Fatal failure diagnostic.
     Failure,
+    /// A severity value not recognized by this crate.
     Unknown(vhpi_sys::vhpiSeverityT),
 }
 
@@ -59,11 +67,17 @@ impl fmt::Display for Severity {
 }
 
 #[derive(Debug)]
+/// Error details returned by simulator.
 pub struct Error {
+    /// Diagnostic severity.
     pub severity: Severity,
+    /// Human-readable error message.
     pub message: String,
+    /// Source file, if reported by the simulator.
     pub file: Option<String>,
+    /// Source line, if reported by the simulator.
     pub line: Option<i32>,
+    /// Additional context string, if provided by the simulator.
     pub context: Option<String>,
 }
 
@@ -92,6 +106,9 @@ impl From<&str> for Error {
 }
 
 #[must_use]
+/// Query the simulator for the last VHPI error.
+///
+/// Returns `None` when no error is pending.
 pub fn check_error() -> Option<Error> {
     let mut info = vhpi_sys::vhpiErrorInfoS {
         severity: vhpi_sys::vhpiSeverityT_vhpiNote,
@@ -137,6 +154,7 @@ pub fn check_error() -> Option<Error> {
     })
 }
 
+/// Emit a simulator assertion message with the given severity.
 pub fn assert(severity: Severity, message: impl AsRef<str>) {
     let c_message = string_to_iso8859_1_cstring(message);
     unsafe { vhpi_sys::vhpi_assert_cstr(severity.into(), c_message.as_ptr().cast_mut()) };

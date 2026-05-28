@@ -16,31 +16,57 @@ use num_traits::One;
 use num_traits::Zero;
 
 #[derive(Debug, PartialEq, Clone)]
+/// Strongly typed representation of values exchanged through VHPI.
 pub enum Value {
+    /// Binary string value.
     BinStr(String),
+    /// Octal string value.
     OctStr(String),
+    /// Hexadecimal string value.
     HexStr(String),
+    /// Decimal string value.
     DecStr(String),
+    /// Single character value.
     Char(char),
+    /// Scalar integer value.
     Int(i32),
+    /// Vector of integer values.
     IntVec(Vec<i32>),
+    /// Scalar logic value.
     Logic(LogicVal),
+    /// Vector of logic values.
     LogicVec(Vec<LogicVal>),
+    /// Scalar small-enum value.
     SmallEnum(u8),
+    /// Vector of small-enum values.
     SmallEnumVec(Vec<u8>),
+    /// Scalar enum value.
     Enum(u32),
+    /// Vector of enum values.
     EnumVec(Vec<u32>),
+    /// String value.
     Str(String),
+    /// Scalar real value.
     Real(f64),
+    /// Vector of real values.
     RealVec(Vec<f64>),
+    /// Scalar time value.
     Time(Time),
+    /// Vector of time values.
     TimeVec(Vec<Time>),
+    /// Scalar long integer value.
     LongInt(i64),
+    /// Vector of long integer values.
     LongIntVec(Vec<i64>),
+    /// Scalar small physical value.
     SmallPhysical(i32),
+    /// Vector of small physical values.
     SmallPhysicalVec(Vec<i32>),
+    /// Scalar physical value.
     Physical(Physical),
+    /// Vector of physical values.
     PhysicalVec(Vec<Physical>),
+    /// Unknown or unsupported value kind.
     Unknown,
 }
 
@@ -162,32 +188,62 @@ impl fmt::Display for Value {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Requested VHPI data format for value transfers.
 pub enum Format {
+    /// Use the object's native value format.
+    ///
+    /// Passing this to `Handle::get_value` lets the simulator choose the
+    /// concrete format and return the value using the correct representation.
     ObjType,
+    /// Binary string format.
     BinStr,
+    /// Octal string format.
     OctStr,
+    /// Hex string format.
     HexStr,
+    /// Decimal string format.
     DecStr,
+    /// Character format.
     Char,
+    /// Integer format.
     Int,
+    /// Scalar logic format.
     Logic,
+    /// Logic vector format.
     LogicVec,
+    /// Scalar small-enum format.
     SmallEnum,
+    /// Small-enum vector format.
     SmallEnumVec,
+    /// Scalar enum format.
     Enum,
+    /// Enum vector format.
     EnumVec,
+    /// String format.
     Str,
+    /// Scalar real format.
     Real,
+    /// Real vector format.
     RealVec,
+    /// Integer vector format.
     IntVec,
+    /// Scalar long integer format.
     LongInt,
+    /// Long-integer vector format.
     LongIntVec,
+    /// Scalar small-physical format.
     SmallPhysical,
+    /// Small-physical vector format.
     SmallPhysicalVec,
+    /// Scalar physical format.
     Physical,
+    /// Physical vector format.
     PhysicalVec,
+    /// Scalar time format.
     Time,
+    /// Time vector format.
     TimeVec,
+    /// Unknown format value from the simulator.
     Unknown(vhpi_sys::vhpiFormatT),
 }
 
@@ -257,12 +313,19 @@ impl From<Format> for vhpi_sys::vhpiFormatT {
     }
 }
 
+/// Write mode used by Handle::put_value.
 pub enum PutValueMode {
+    /// Deposit a value without forcing.
     Deposit,
+    /// Deposit and request immediate propagation.
     DepositPropagate,
+    /// Force a value.
     Force,
+    /// Force and request immediate propagation.
     ForcePropagate,
+    /// Release a previously forced value.
     Release,
+    /// Enforce size constraints during assignment.
     SizeConstraint,
 }
 
@@ -327,6 +390,18 @@ impl VectorBox {
 }
 
 impl Handle {
+    /// Read a value from this handle using the requested format.
+    ///
+    /// For vector and string formats, this function performs the required
+    /// two-pass buffer allocation expected by VHPI.
+    ///
+    /// Passing `Format::ObjType` requests automatic format selection based on
+    /// the object's type.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the simulator reports a failure for
+    /// value retrieval.
     pub fn get_value(&self, format: Format) -> Result<Value, Error> {
         let mut val = vhpi_sys::vhpiValueT {
             format: format.into(),
@@ -535,6 +610,11 @@ impl Handle {
         ret
     }
 
+    /// Write a value to this handle using the selected put-value mode.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the simulator rejects the value write.
     pub fn put_value(&self, value: Value, mode: PutValueMode) -> Result<(), Error> {
         // Create a holder for any allocated buffer
         let mut buffer_holder: Option<VectorBox> = None;

@@ -3,8 +3,11 @@ use num_traits::Zero;
 use crate::Physical;
 
 #[derive(Debug, Clone, PartialEq)]
+/// Simulation time represented as a split 64-bit value.
 pub struct Time {
+    /// Low 32 bits of the time value.
     pub low: u32,
+    /// High 32 bits of the time value (signed for compatibility with VHPI).
     pub high: i32,
 }
 
@@ -84,12 +87,14 @@ impl std::fmt::Display for Time {
 }
 impl Time {
     #[must_use]
+    /// Convert this split representation into a single `i64` value.
     pub fn to_i64(&self) -> i64 {
         i64::from(self.high) << 32 | i64::from(self.low)
     }
 }
 
 #[must_use]
+/// Get the current simulator time.
 pub fn get_time() -> Time {
     let mut time = vhpi_sys::vhpiTimeT { low: 0, high: 0 };
     unsafe { vhpi_sys::vhpi_get_time(&raw mut time, std::ptr::null_mut()) };
@@ -98,6 +103,7 @@ pub fn get_time() -> Time {
 }
 
 #[must_use]
+/// Get the current simulator cycle count.
 pub fn get_cycles() -> i64 {
     let mut cycles: std::os::raw::c_long = 0;
     unsafe { vhpi_sys::vhpi_get_time(std::ptr::null_mut(), &raw mut cycles) };
@@ -106,6 +112,7 @@ pub fn get_cycles() -> i64 {
 }
 
 #[must_use]
+/// Get the next scheduled simulator time and status code.
 pub fn get_next_time() -> (Time, i32) {
     let mut time = vhpi_sys::vhpiTimeT { low: 0, high: 0 };
     let result = unsafe { vhpi_sys::vhpi_get_next_time(&raw mut time) };

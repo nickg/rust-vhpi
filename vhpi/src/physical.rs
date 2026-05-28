@@ -1,6 +1,9 @@
 #[derive(Debug, Clone, PartialEq)]
+/// Physical quantity represented as a split 64-bit value.
 pub struct Physical {
+    /// Low 32 bits of the value.
     pub low: u32,
+    /// High 32 bits of the value (signed for compatibility with VHPI).
     pub high: i32,
 }
 
@@ -42,6 +45,7 @@ impl From<Physical> for vhpi_sys::vhpiPhysT {
 
 impl Physical {
     #[must_use]
+    /// Convert this split representation into a single `i64` value.
     pub fn to_i64(&self) -> i64 {
         i64::from(self.high) << 32 | i64::from(self.low)
     }
