@@ -26,6 +26,7 @@ pub use time::*;
 pub use value::*;
 
 use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
 
 extern crate num_derive;
 
@@ -33,7 +34,7 @@ extern crate num_derive;
 pub fn printf(msg: impl AsRef<str>) {
     static FMT: &[u8] = b"%s\n\0";
     let cstr = string_to_iso8859_1_cstring(msg);
-    unsafe { vhpi_sys::vhpi_printf_cstr(FMT.as_ptr().cast::<i8>(), cstr.as_ptr()) };
+    unsafe { vhpi_sys::vhpi_printf_cstr(FMT.as_ptr().cast::<c_char>(), cstr.as_ptr()) };
 }
 
 /// Convert Rust string to ISO-8859-1 encoded C string
@@ -64,7 +65,7 @@ macro_rules! printf {
 
 /// Convert ISO-8859-1 encoded C string from vhpiValueS to Rust String
 fn iso8859_1_val_to_string(value: &vhpi_sys::vhpiValueS) -> String {
-    let cstr = unsafe { CStr::from_ptr(value.value.str_ as *const i8) };
+    let cstr = unsafe { CStr::from_ptr(value.value.str_.cast::<c_char>()) };
     iso8859_1_cstr_to_string(cstr)
 }
 
