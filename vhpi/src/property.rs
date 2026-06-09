@@ -3,6 +3,7 @@
 use num_derive::FromPrimitive;
 use num_traits::Zero;
 use std::ffi::CStr;
+use std::os::raw::c_char;
 use vhpi_sys::{vhpi_get, vhpi_get_phys, vhpi_get_real, vhpi_get_str, vhpi_iterator, vhpi_scan};
 
 use crate::{iso8859_1_cstr_to_string, Handle, Physical};
@@ -649,7 +650,7 @@ impl Handle {
             return None;
         }
 
-        let cstr = unsafe { CStr::from_ptr(ptr.cast::<i8>()) };
+        let cstr = unsafe { CStr::from_ptr(ptr.cast::<c_char>()) };
         Some(iso8859_1_cstr_to_string(cstr))
     }
 
