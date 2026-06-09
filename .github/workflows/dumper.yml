@@ -7,7 +7,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         # Final value should correspond to rust-version in Cargo.toml
-        toolchain: ["stable", "nightly", "1.82"]
+        toolchain: [stable, nightly, "1.82"]
         nvc: ["latest"]
     runs-on: ${{ matrix.os }}
     steps:

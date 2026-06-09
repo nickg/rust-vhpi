@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         # Final value should correspond to rust-version in Cargo.toml
-        toolchain: ["stable", "nightly", "1.82"]
+        toolchain: [stable, nightly, "1.82"]
         nvc: ["latest"]
     runs-on: ubuntu-latest
     steps:
