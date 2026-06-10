@@ -66,6 +66,8 @@ pub fn simulator_version() -> Option<String> {
 
 #[must_use]
 /// Get the simulator time resolution.
+///
+/// This is the time in fs that one "tick" corresponds to in e.g. [`crate::get_time`].
 pub fn simulator_time_resolution() -> Time {
     crate::handle(OneToOne::Tool)
         .get_phys(PhysProperty::ResolutionLimit)

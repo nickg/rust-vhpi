@@ -21,3 +21,7 @@ vhpi-shim = { workspace = true, optional = true }
 default = ["nvc"]
 nvc = []
 dynamic = ["dep:vhpi-shim"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

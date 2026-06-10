@@ -205,7 +205,7 @@ pub enum IntProperty {
     /// Whether object denotes an operator.
     IsOperator = vhpi_sys::vhpiIntPropertyT_vhpiIsOperatorP as u32,
     #[cfg(feature = "nvc")]
-    /// Simulator random seed. Requires `nvc` feature.
+    /// Simulator random seed.
     RandomSeed = vhpi_sys::vhpiIntPropertyT_vhpiRandomSeedP as u32,
 }
 

@@ -1,3 +1,4 @@
+//! A shim library to enable dynamic name resolution for VHPI plugins on macOS and Windows.
 #![allow(clippy::missing_safety_doc)]
 
 #[cfg(any(windows, target_os = "macos"))]

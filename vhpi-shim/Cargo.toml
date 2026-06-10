@@ -13,3 +13,7 @@ rust-version.workspace = true
 path = "src/lib.rs"
 
 [dependencies]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
