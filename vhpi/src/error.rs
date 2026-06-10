@@ -66,7 +66,7 @@ impl fmt::Display for Severity {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 /// Error details returned by simulator.
 pub struct Error {
     /// Diagnostic severity.

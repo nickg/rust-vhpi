@@ -1,6 +1,6 @@
 use num_traits::Zero;
 
-use crate::Physical;
+use crate::{check_error, Error, Physical};
 
 #[derive(Debug, Clone, PartialEq)]
 /// Simulation time represented as a split 64-bit value.
@@ -111,13 +111,39 @@ pub fn get_cycles() -> i64 {
     cycles as i64
 }
 
+#[derive(Debug, Clone, PartialEq)]
+/// Status value from [`get_next_time`].
+pub enum NextTimeStatus {
+    /// If the next simulation cycle time value is TIME'HIGH and there are no active drivers, or process resumptions, and the following callbacks: `vhpiCbAfterDelay`, `vhpiCbRepAfterDelay`, `vhpiCbTimeOut`, or `vhpiCbRepTimeOut` are not to occur in the next simulation time.
+    NoActivity,
+    OK,
+    Error(Option<Error>),
+}
+
+impl std::fmt::Display for NextTimeStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            NextTimeStatus::NoActivity => Ok(write!(f, "No activity")?),
+            NextTimeStatus::OK => Ok(write!(f, "OK")?),
+            NextTimeStatus::Error(Some(error)) => Ok(write!(f, "{error}")?),
+            NextTimeStatus::Error(None) => Ok(write!(f, "Unknown error")?),
+        }
+    }
+}
+
 #[must_use]
 /// Get the next scheduled simulator time and status code.
-pub fn get_next_time() -> (Time, i32) {
+pub fn get_next_time() -> (Time, NextTimeStatus) {
     let mut time = vhpi_sys::vhpiTimeT { low: 0, high: 0 };
     let result = unsafe { vhpi_sys::vhpi_get_next_time(&raw mut time) };
 
-    (time.into(), result)
+    let status = match result {
+        -1 => NextTimeStatus::NoActivity,
+        0 => NextTimeStatus::OK,
+        _ => NextTimeStatus::Error(check_error()),
+    };
+
+    (time.into(), status)
 }
 
 #[cfg(test)]

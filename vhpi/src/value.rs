@@ -811,7 +811,7 @@ impl Handle {
     }
 }
 
-/// Convert a string to a `Value::LogicVec` by mapping each character to a `LogicVal` using the character's byte value.
+/// Convert a string to a [`Value::LogicVec`] by mapping each character to a [`LogicVal`] using the character's byte value.
 #[must_use]
 pub fn string_to_logic_vec(s: &str) -> Value {
     Value::LogicVec(
@@ -822,8 +822,9 @@ pub fn string_to_logic_vec(s: &str) -> Value {
 }
 
 #[must_use]
-/// Convert an unsigned integer to a `Value::LogicVec` of the specified width,
-/// where each bit of the integer is mapped to a `LogicVal`.
+/// Convert an unsigned integer to a [`Value::LogicVec`] of the specified width.
+///
+/// Each bit of the integer is mapped to a [`LogicVal`].
 /// If the integer cannot fit into the specified width, it will be truncated.
 pub fn uint_to_logic_vec(mut value: u64, width: usize) -> Value {
     assert!(width <= 64, "Width must be 64 or less to fit into u64");
@@ -842,8 +843,9 @@ pub fn uint_to_logic_vec(mut value: u64, width: usize) -> Value {
 }
 
 #[must_use]
-/// Convert a signed integer to a `Value::LogicVec` of the specified width,
-/// where each bit of the integer is mapped to a `LogicVal`.
+/// Convert a signed integer to a [`Value::LogicVec`] of the specified width.
+///
+/// Each bit of the integer is mapped to a [`LogicVal`].
 /// If the integer cannot fit into the specified width, it will be truncated.
 pub fn int_to_logic_vec(mut value: i64, width: usize) -> Value {
     assert!(width <= 64, "Width must be 64 or less to fit into i64");
@@ -862,8 +864,9 @@ pub fn int_to_logic_vec(mut value: i64, width: usize) -> Value {
 }
 
 #[must_use]
-/// Convert a `LogicVec` to an unsigned integer by interpreting the vector as a binary number,
-/// where `LogicVal::Zero` represents 0 and `LogicVal::One` represents 1.
+/// Convert a [`Value::LogicVec`] to an unsigned integer by interpreting the vector as a binary number.
+///
+/// [`LogicVal::Zero`] represents 0 and [`LogicVal::One`] represents 1.
 /// If any value in the vector is not `Zero` or `One`, return `None`.
 pub fn logic_vec_to_uint(logic_vec: &[LogicVal]) -> Option<u64> {
     let mut value = 0u64;
@@ -879,8 +882,9 @@ pub fn logic_vec_to_uint(logic_vec: &[LogicVal]) -> Option<u64> {
 }
 
 #[must_use]
-/// Convert a `LogicVec` to a signed integer by interpreting the vector as a binary number,
-/// where `LogicVal::Zero` represents 0 and `LogicVal::One` represents 1.
+/// Convert a [`Value::LogicVec`] to a signed integer by interpreting the vector as a binary number.
+///
+/// [`LogicVal::Zero`] represents 0 and [`LogicVal::One`] represents 1.
 /// If any value in the vector is not `Zero` or `One`, return `None`.
 pub fn logic_vec_to_int(logic_vec: &[LogicVal]) -> Option<i64> {
     if logic_vec.len() > 64 {
@@ -909,8 +913,9 @@ pub fn logic_vec_to_int(logic_vec: &[LogicVal]) -> Option<i64> {
 
 #[cfg(feature = "bigint")]
 #[must_use]
-/// Convert a `LogicVec` to a `BigInt` by interpreting the vector as a binary number,
-/// where `LogicVal::Zero` represents 0 and `LogicVal::One` represents 1.
+/// Convert a [`Value::LogicVec`] to a `BigInt` by interpreting the vector as a binary number.
+///
+/// [ `LogicVal::Zero`] represents 0 and [ `LogicVal::One`] represents 1.
 /// If any value in the vector is not `Zero` or `One`, return `None`.
 pub fn logic_vec_to_bigint(logic_vec: &[LogicVal]) -> Option<BigInt> {
     let mut value = BigInt::ZERO;
@@ -934,8 +939,9 @@ pub fn logic_vec_to_bigint(logic_vec: &[LogicVal]) -> Option<BigInt> {
 
 #[cfg(feature = "bigint")]
 #[must_use]
-/// Convert a `LogicVec` to a `BigUint` by interpreting the vector as a binary number,
-/// where `LogicVal::Zero` represents 0 and `LogicVal::One` represents 1.
+/// Convert a [`Value::LogicVec`] to a `BigUint` by interpreting the vector as a binary number.
+///
+/// [`LogicVal::Zero`] represents 0 and [ `LogicVal::One`] represents 1.
 /// If any value in the vector is not `Zero` or `One`, return `None`.
 pub fn logic_vec_to_biguint(logic_vec: &[LogicVal]) -> Option<BigUint> {
     let mut value = BigUint::ZERO;
@@ -953,8 +959,11 @@ pub fn logic_vec_to_biguint(logic_vec: &[LogicVal]) -> Option<BigUint> {
 
 #[cfg(feature = "bigint")]
 #[must_use]
-/// Convert a `BigInt` to a `Value::LogicVec` of the specified width, where each bit of the integer is mapped to a `LogicVal`.
+/// Convert a `BigInt` to a [`Value::LogicVec`] of the specified width.
+///
+/// Each bit of the integer is mapped to a [`LogicVal`].
 /// The most significant bit of the integer corresponds to the first element of the vector.
+/// [`LogicVal::Zero`] represents 0 and [ `LogicVal::One`] represents 1.
 /// If the integer cannot fit into the specified width, it will be truncated.
 pub fn bigint_to_logic_vec(value: &BigInt, width: usize) -> Value {
     let mut logic_vec = Vec::with_capacity(width);
@@ -975,7 +984,9 @@ pub fn bigint_to_logic_vec(value: &BigInt, width: usize) -> Value {
 
 #[cfg(feature = "bigint")]
 #[must_use]
-/// Convert a `BigUint` to a `Value::LogicVec` of the specified width, where each bit of the integer is mapped to a `LogicVal`.
+/// Convert a `BigUint` to a [`Value::LogicVec`] of the specified width.
+///
+/// Each bit of the integer is mapped to a [`LogicVal`].
 /// The most significant bit of the integer corresponds to the first element of the vector.
 /// If the integer cannot fit into the specified width, it will be truncated.
 pub fn biguint_to_logic_vec(value: &BigUint, width: usize) -> Value {

@@ -1,4 +1,14 @@
 //! Safe Rust wrappers around VHPI APIs.
+//!
+//! | Feature   | Default | Description |
+//! |-----------|---------|-------------|
+//! | `nvc`     | Yes     | Include NVC-specific VHPI-extensions |
+//! | `bigint`  | No      | Functions that return `BigInt`/`BigUint` |
+//! | `dynamic` | No      | Enable runtime name resolution. |
+//!
+//! The `dynamic` feature is required if you want to build a dynamic library (dylib on macOS and DLL on Windows).
+//! If you link directly to the simulator it is not required.
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[macro_use]
 mod macros;
@@ -37,7 +47,8 @@ pub fn printf(msg: impl AsRef<str>) {
     unsafe { vhpi_sys::vhpi_printf_cstr(FMT.as_ptr().cast::<c_char>(), cstr.as_ptr()) };
 }
 
-/// Convert Rust string to ISO-8859-1 encoded C string
+/// Convert Rust string to ISO-8859-1 encoded C string.
+///
 /// Characters outside of ISO-8859-1 range are replaced with ?
 pub fn string_to_iso8859_1_cstring(msg: impl AsRef<str>) -> CString {
     // Convert UTF-8 string to ISO-8859-1 bytes
@@ -56,7 +67,7 @@ pub fn string_to_iso8859_1_cstring(msg: impl AsRef<str>) -> CString {
 /// Print a formatted message to the simulator console.
 ///
 /// This macro mirrors `println!`-style formatting and forwards to
-/// [`printf`].
+/// [`printf()`].
 macro_rules! printf {
     ($($arg:tt)*) => {{
         $crate::printf(&format!($($arg)*));

@@ -25,3 +25,7 @@ default = ["nvc"]
 bigint = ["num-bigint"]
 nvc = ["vhpi-sys/nvc"]
 dynamic = ["vhpi-sys/dynamic"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
