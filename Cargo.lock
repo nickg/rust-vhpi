@@ -71,7 +71,7 @@ dependencies = [
 
 [[package]]
 name = "dumper"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "vhpi",
 ]
@@ -251,7 +251,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "stringindexing"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "vhpi",
 ]
@@ -269,7 +269,7 @@ dependencies = [
 
 [[package]]
 name = "test_simple"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "vhpi",
 ]
@@ -282,7 +282,7 @@ checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
 name = "vhpi"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "bitflags",
  "num-bigint",
@@ -293,11 +293,11 @@ dependencies = [
 
 [[package]]
 name = "vhpi-shim"
-version = "0.3.1"
+version = "0.4.0"
 
 [[package]]
 name = "vhpi-sys"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "bindgen",
  "vhpi-shim",
