@@ -50,9 +50,20 @@ impl From<i32> for ControlReturn {
 }
 impl Handle {
     #[must_use]
+    #[deprecated(
+        since = "0.4.0",
+        note = "use the standalone `control` function instead"
+    )]
     /// Request a simulation control operation.
     pub fn control(&self, control: Control) -> ControlReturn {
         let result = unsafe { vhpi_sys::vhpi_control1(control.into()) };
         result.into()
     }
+}
+
+#[must_use]
+/// Request a simulation control operation.
+pub fn control(control: Control) -> ControlReturn {
+    let result = unsafe { vhpi_sys::vhpi_control1(control.into()) };
+    result.into()
 }
