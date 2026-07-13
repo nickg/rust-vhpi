@@ -8,6 +8,7 @@ repository.workspace = true
 keywords = ["vhdl", "vhpi", "wrapper", "hardware-simulation"]
 categories = ["simulation", "api-bindings"]
 readme = "README.md"
+rust-version.workspace = true
 
 [lib]
 name = "vhpi"

@@ -390,6 +390,36 @@ impl VectorBox {
 }
 
 impl Handle {
+    /// Query the format and element count for this handle without reading the value.
+    ///
+    /// Performs the first pass of the VHPI value retrieval protocol.  For
+    /// scalar types the returned element count is `0`.  For vector and string
+    /// types it is the number of elements (characters / vector bits) that a
+    /// subsequent [`Handle::get_value`] call would require buffer space for.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the simulator reports a failure.
+    pub fn get_format(&self) -> Result<(Format, i32), Error> {
+        let mut val = vhpi_sys::vhpiValueT {
+            format: Format::ObjType.into(),
+            bufSize: 0,
+            numElems: 0,
+            unit: vhpi_sys::vhpiPhysS { high: 0, low: 0 },
+            value: vhpi_sys::vhpiValueS__bindgen_ty_1 { longintg: 0 },
+        };
+
+        let rc = unsafe { vhpi_sys::vhpi_get_value(self.as_raw(), &raw mut val) };
+
+        if rc < 0 {
+            return Err(
+                crate::check_error().unwrap_or_else(|| "Unknown error in vhpi_get_value".into())
+            );
+        }
+
+        Ok((Format::from(val.format), rc))
+    }
+
     /// Read a value from this handle using the requested format.
     ///
     /// For vector and string formats, this function performs the required
