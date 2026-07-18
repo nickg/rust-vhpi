@@ -1,11 +1,21 @@
 #![cfg_attr(not(windows), allow(clippy::unnecessary_cast))]
 
-use crate::{check_error, Error, Handle};
+use crate::{check_error, Error, Handle, Time};
+use num_derive::{FromPrimitive, ToPrimitive};
 use std::mem::ManuallyDrop;
 use vhpi_sys::{vhpiCbDataS, vhpi_register_cb};
 
+bitflags::bitflags! {
+    /// Bitmask of callback flags.
+    pub struct CallbackFlag: i32 {
+        const Disable = vhpi_sys::vhpiDisableCb as i32;
+        const Return = vhpi_sys::vhpiReturnCb as i32;
+    }
+}
+
 #[repr(u32)]
 /// Callback reasons.
+#[derive(Debug, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
 pub enum CbReason {
     /// Triggered at the start of simulation.
     StartOfSimulation = vhpi_sys::vhpiCbStartOfSimulation as u32,
@@ -105,6 +115,13 @@ pub enum CbReason {
     RepTimeOut = vhpi_sys::vhpiCbRepTimeOut as u32,
     /// Triggered when sensitivity conditions are met.
     Sensitivity = vhpi_sys::vhpiCbSensitivity as u32,
+    Unknown,
+}
+
+impl CbReason {
+    pub fn from_u32(value: u32) -> Self {
+        num_traits::FromPrimitive::from_u32(value).unwrap_or(CbReason::Unknown)
+    }
 }
 
 /// Data passed to callback functions.
@@ -113,10 +130,43 @@ pub struct CbData {
 }
 
 impl CbData {
+    #[inline]
+    unsafe fn from_raw(raw: *const vhpiCbDataS) -> Self {
+        Self {
+            // vhpiCbDataS::obj is the callback trigger object handle.
+            // Keep it borrowed by avoiding Drop with ManuallyDrop.
+            obj: ManuallyDrop::new(Handle::from_raw((*raw).obj)),
+        }
+    }
+
     #[must_use]
     pub fn obj(&self) -> &Handle {
         // ManuallyDrop has the same layout as Handle; only Drop behavior differs.
-        unsafe { &*(&self.obj as *const ManuallyDrop<Handle> as *const Handle) }
+        unsafe { &*(&raw const self.obj).cast::<Handle>() }
+    }
+}
+
+/// Information about a registered callback returned by [`get_cb_info`] and
+/// [`Handle::get_cb_info`].
+#[derive(Debug, Clone, PartialEq)]
+pub struct CbInfo {
+    /// Raw callback reason as returned by the simulator. Compare against
+    /// [`CbReason`] discriminant values to identify the reason.
+    pub reason: CbReason,
+    /// The trigger object this callback is attached to.
+    ///
+    /// The handle is borrowed from the simulator and must not be released;
+    /// it is valid only as long as the callback handle is alive.
+    obj: ManuallyDrop<Handle>,
+    /// The scheduled simulation time for time-based callbacks.
+    pub time: Option<Time>,
+}
+
+impl CbInfo {
+    #[must_use]
+    /// Return a reference to the trigger object handle.
+    pub fn obj(&self) -> &Handle {
+        unsafe { &*(&raw const self.obj).cast::<Handle>() }
     }
 }
 
@@ -128,7 +178,7 @@ where
     time: vhpi_sys::vhpiTimeT,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 /// Errors returned when registering a VHPI callback.
 pub enum RegisterCbError {
     /// A callback reason value was not recognized.
@@ -150,9 +200,7 @@ where
         return;
     }
 
-    let data = CbData {
-        obj: ManuallyDrop::new(Handle::from_raw((*cb_data).obj)),
-    };
+    let data = CbData::from_raw(cb_data);
 
     let callback = &*user_data;
     callback(&data);
@@ -171,9 +219,7 @@ where
         return;
     }
 
-    let data = CbData {
-        obj: ManuallyDrop::new(Handle::from_raw((*cb_data).obj)),
-    };
+    let data = CbData::from_raw(cb_data);
 
     ((*user_data).callback)(&data);
 
@@ -204,7 +250,7 @@ where
         value: std::ptr::null_mut(),
         user_data,
     };
-    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
+    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, CallbackFlag::Return.bits()) };
     match check_error() {
         Some(err) => {
             unsafe {
@@ -225,10 +271,7 @@ where
 ///
 /// Returns [`RegisterCbError::Error`] when the simulator reports an error while
 /// registering the callback.
-pub fn register_cb_after_delay<F>(
-    delay: crate::Time,
-    callback: F,
-) -> Result<Handle, RegisterCbError>
+pub fn register_cb_after_delay<F>(delay: Time, callback: F) -> Result<Handle, RegisterCbError>
 where
     F: Fn(&CbData) + 'static,
 {
@@ -245,7 +288,7 @@ where
         value: std::ptr::null_mut(),
         user_data: user_data.cast::<std::os::raw::c_void>(),
     };
-    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
+    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, CallbackFlag::Return.bits()) };
     match check_error() {
         Some(err) => {
             unsafe {
@@ -259,9 +302,70 @@ where
 
 /// Remove a previously registered callback.
 ///
-/// Passing a handle that does not refer to a callback is simulator-dependent.
-pub fn remove_cb(handle: &Handle) {
-    unsafe { vhpi_sys::vhpi_remove_cb(handle.as_raw()) };
+/// # Errors
+///
+/// Returns an [`Error`] if the simulator reports a failure.
+pub fn remove_cb(handle: &Handle) -> Result<(), Error> {
+    let rc = unsafe { vhpi_sys::vhpi_remove_cb(handle.as_raw()) };
+    if rc != 0 {
+        Err(check_error().unwrap_or_else(|| "vhpi_remove_cb failed".into()))
+    } else {
+        Ok(())
+    }
+}
+
+/// Disable a previously registered callback without removing it.
+///
+/// The callback remains registered but will not fire until re-enabled with
+/// [`enable_cb`]. Returns an error if the simulator reports a failure.
+///
+/// # Errors
+///
+/// Returns an [`Error`] if the simulator reports a failure.
+pub fn disable_cb(handle: &Handle) -> Result<(), Error> {
+    let rc = unsafe { vhpi_sys::vhpi_disable_cb(handle.as_raw()) };
+    if rc != 0 {
+        Err(check_error().unwrap_or_else(|| "vhpi_disable_cb failed".into()))
+    } else {
+        Ok(())
+    }
+}
+
+/// Re-enable a callback that was previously disabled with [`disable_cb`].
+///
+/// # Errors
+///
+/// Returns an [`Error`] if the simulator reports a failure.
+pub fn enable_cb(handle: &Handle) -> Result<(), Error> {
+    let rc = unsafe { vhpi_sys::vhpi_enable_cb(handle.as_raw()) };
+    if rc != 0 {
+        Err(check_error().unwrap_or_else(|| "vhpi_enable_cb failed".into()))
+    } else {
+        Ok(())
+    }
+}
+
+/// Retrieve information about a registered callback.
+///
+/// # Errors
+///
+/// Returns an [`Error`] if the simulator reports a failure.
+pub fn get_cb_info(handle: &Handle) -> Result<CbInfo, Error> {
+    let mut raw: vhpi_sys::vhpiCbDataT = unsafe { std::mem::zeroed() };
+    let rc = unsafe { vhpi_sys::vhpi_get_cb_info(handle.as_raw(), &raw mut raw) };
+    if rc != 0 {
+        return Err(check_error().unwrap_or_else(|| "vhpi_get_cb_info failed".into()));
+    }
+    let time = if raw.time.is_null() {
+        None
+    } else {
+        Some(Time::from(unsafe { *raw.time }))
+    };
+    Ok(CbInfo {
+        reason: CbReason::from_u32(raw.reason as u32),
+        obj: ManuallyDrop::new(Handle::from_raw(raw.obj)),
+        time,
+    })
 }
 
 impl Handle {
@@ -286,7 +390,7 @@ impl Handle {
             value: std::ptr::null_mut(),
             user_data,
         };
-        let ret = unsafe { vhpi_register_cb(&raw mut cb_data, vhpi_sys::vhpiReturnCb as i32) };
+        let ret = unsafe { vhpi_register_cb(&raw mut cb_data, CallbackFlag::Return.bits()) };
         match check_error() {
             Some(err) => {
                 unsafe {
@@ -299,7 +403,38 @@ impl Handle {
     }
 
     /// Remove the callback represented by this handle.
-    pub fn remove_cb(&self) {
-        unsafe { vhpi_sys::vhpi_remove_cb(self.as_raw()) };
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`] if the simulator reports a failure.
+    pub fn remove_cb(&self) -> Result<(), Error> {
+        remove_cb(self)
+    }
+
+    /// Disable this callback without removing it.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`] if the simulator reports a failure.
+    pub fn disable_cb(&self) -> Result<(), Error> {
+        disable_cb(self)
+    }
+
+    /// Re-enable this callback after it was disabled.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`] if the simulator reports a failure.
+    pub fn enable_cb(&self) -> Result<(), Error> {
+        enable_cb(self)
+    }
+
+    /// Retrieve information about this callback.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`] if the simulator reports a failure.
+    pub fn get_cb_info(&self) -> Result<CbInfo, Error> {
+        get_cb_info(self)
     }
 }

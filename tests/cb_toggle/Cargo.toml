@@ -1,0 +1,16 @@
+[package]
+name = "cb_toggle"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+test = false
+doctest = false
+
+[dependencies]
+vhpi = { workspace = true, features = ["dynamic"] }

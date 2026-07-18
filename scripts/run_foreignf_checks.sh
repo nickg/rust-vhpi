@@ -2,20 +2,24 @@
 set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PLUGIN_CRATE="stringindexing"
+PLUGIN_CRATE="foreignf"
 PROFILE="debug"
 TRACE="false"
 SHOW_LOG="false"
 WORK_ROOT="${ROOT_DIR}/target/nvc-work"
+EXPECTED_MARKERS=(
+    "foreignf plugin loaded"
+  "foreignf: all checks passed \(4 mark_call invocations, 4 add_ints invocations, 6 bit_reverse invocations\)"
+)
 
-TEST_BENCH="tb_string"
+TEST_BENCH="tb_foreignf"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/run_stringindexing.sh [options]
+Usage: scripts/run_foreignf_checks.sh [options]
 
-Builds the VHPI cdylib stringindexing, then compiles and runs the VHDL testbenches
-with nvc and validates key VHPI log markers.
+Builds the VHPI cdylib foreignf, then compiles and runs tb_foreignf with nvc
+and validates key VHPI log markers.
 
 Options:
   --release             Build and load release cdylib
@@ -24,13 +28,12 @@ Options:
   -h, --help            Show this help text
 
 Examples:
-  scripts/run_stringindexing.sh
-  scripts/run_stringindexing.sh --release --trace
-  scripts/run_stringindexing.sh --show-log
+  scripts/run_foreignf_checks.sh
+  scripts/run_foreignf_checks.sh --release --trace
+  scripts/run_foreignf_checks.sh --show-log
 EOF
 }
 
-SELECTED_TESTS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --release)
@@ -119,10 +122,17 @@ fi
 
 popd >/dev/null
 
+for marker in "${EXPECTED_MARKERS[@]}"; do
+  if ! grep -Eq "$marker" "$LOG_FILE"; then
+    echo "${TEST_BENCH}: missing marker /${marker}/" >&2
+    cat "$LOG_FILE" >&2
+    exit 1
+  fi
+done
 
 echo "${TEST_BENCH}: ok"
 
-echo "[3/3] Completed stringindexing run"
+echo "[3/3] Completed ${TEST_BENCH} run"
 echo "Logs: ${LOG_FILE}"
 
 if [[ "$SHOW_LOG" == "true" ]]; then

@@ -34,7 +34,7 @@ dependencies = [
  "regex",
  "rustc-hash",
  "shlex",
- "syn",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -42,6 +42,13 @@ name = "bitflags"
 version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af"
+
+[[package]]
+name = "cb_toggle"
+version = "0.5.0"
+dependencies = [
+ "vhpi",
+]
 
 [[package]]
 name = "cexpr"
@@ -71,7 +78,7 @@ dependencies = [
 
 [[package]]
 name = "dumper"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "vhpi",
 ]
@@ -81,6 +88,13 @@ name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
+
+[[package]]
+name = "foreignf"
+version = "0.5.0"
+dependencies = [
+ "vhpi",
+]
 
 [[package]]
 name = "glob"
@@ -153,13 +167,13 @@ dependencies = [
 
 [[package]]
 name = "num-derive"
-version = "0.4.2"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed3955f1a9c7c0c15e092f9c887db08b1fc683305fdf6eb6684f22555355e202"
+checksum = "e4e98dc3b890f6c23a0f9d3d491a2823d0dea0fa656302a13dd225fa924112a8"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn",
+ "syn 3.0.2",
 ]
 
 [[package]]
@@ -187,7 +201,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b"
 dependencies = [
  "proc-macro2",
- "syn",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -251,7 +265,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "stringindexing"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "vhpi",
 ]
@@ -268,8 +282,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "syn"
+version = "3.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a207d6d6a2b7fc470b80443726053f18a2481b7e1eee970597051596567987a3"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
 name = "test_simple"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "vhpi",
 ]
@@ -282,7 +307,7 @@ checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
 name = "vhpi"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "bitflags",
  "num-bigint",
@@ -293,11 +318,11 @@ dependencies = [
 
 [[package]]
 name = "vhpi-shim"
-version = "0.4.0"
+version = "0.5.0"
 
 [[package]]
 name = "vhpi-sys"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "bindgen",
  "vhpi-shim",

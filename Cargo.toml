@@ -1,20 +1,20 @@
 [workspace]
-members = ["vhpi-sys", "vhpi", "vhpi-shim", "dumper", "tests/test_simple", "tests/stringindexing"]
+members = ["vhpi-sys", "vhpi", "vhpi-shim", "dumper", "tests/test_simple", "tests/stringindexing", "tests/foreignf", "tests/cb_toggle"]
 resolver = "2"
 
 [workspace.package]
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/nickg/rust-vhpi"
 rust-version = "1.82"
 
 [workspace.dependencies]
-vhpi = { path = "vhpi", version = "0.4.0" }
-vhpi-sys = { path = "vhpi-sys", version = "0.4.0" }
-vhpi-shim = { path = "vhpi-shim", version = "0.4.0" }
+vhpi = { path = "vhpi", version = "0.5.0" }
+vhpi-sys = { path = "vhpi-sys", version = "0.5.0" }
+vhpi-shim = { path = "vhpi-shim", version = "0.5.0" }
 bindgen = "0.72"
 bitflags = "2.11"
 num-bigint = "0.5"
-num-derive = "0.4"
+num-derive = "0.5"
 num-traits = "0.2"

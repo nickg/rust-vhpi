@@ -20,6 +20,7 @@ used=$(
         "$VHPI_SRC" \
     | grep -o 'vhpi_[a-z_]*[a-z]' \
     | grep -v '^vhpi_sys$' \
+    | grep -v '^vhpi_startup$' \
     | sort -u
 )
 

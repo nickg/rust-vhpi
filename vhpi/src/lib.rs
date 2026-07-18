@@ -16,6 +16,7 @@ mod macros;
 mod callback;
 mod control;
 mod error;
+mod foreignf;
 mod handle;
 mod logic;
 mod physical;
@@ -27,6 +28,7 @@ mod value;
 pub use callback::*;
 pub use control::*;
 pub use error::*;
+pub use foreignf::*;
 pub use handle::*;
 pub use logic::*;
 pub use physical::*;
@@ -61,6 +63,15 @@ pub fn string_to_iso8859_1_cstring(msg: impl AsRef<str>) -> CString {
         })
         .collect();
     CString::new(iso8859_1_bytes).unwrap()
+}
+
+/// Test whether a character is printable by the simulator.
+///
+/// Returns `true` if the character can be safely printed to the simulator console,
+/// `false` otherwise.
+#[must_use]
+pub fn is_printable(ch: u8) -> bool {
+    unsafe { vhpi_sys::vhpi_is_printable(ch as std::os::raw::c_char) != 0 }
 }
 
 #[macro_export]

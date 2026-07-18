@@ -1,4 +1,4 @@
-name: Run test_simple example
+name: Run integration tests
 on: [push, pull_request]
 
 jobs:
@@ -20,7 +20,15 @@ jobs:
           version: ${{ matrix.nvc }}
       - name: Run test_simple against tb_simple
         run: |
-          ./scripts/run_test_simple.sh
+          ./scripts/run_test_simple.sh --show-log
       - name: Run stringindexing against tb_string
         run: |
-          ./scripts/run_stringindexing.sh
+          ./scripts/run_stringindexing.sh --show-log
+
+      - name: Run foreign function example
+        run: |
+          ./scripts/run_foreignf_checks.sh --show-log
+
+      - name: Run callback disable and enable example
+        run: |
+          ./scripts/run_cb_toggle_checks.sh --show-log

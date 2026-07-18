@@ -52,6 +52,14 @@ macro_rules! define_vhpi_forwarders {
             unsafe extern "C" fn(VhpiHandleT, VhpiHandleT) -> std::ffi::c_int;
         type VhpiCheckErrorFn = unsafe extern "C" fn(*mut std::ffi::c_void) -> std::ffi::c_int;
         type VhpiReleaseHandleFn = unsafe extern "C" fn(VhpiHandleT) -> std::ffi::c_int;
+        type VhpiDisableCbFn = unsafe extern "C" fn(VhpiHandleT) -> std::ffi::c_int;
+        type VhpiEnableCbFn = unsafe extern "C" fn(VhpiHandleT) -> std::ffi::c_int;
+        type VhpiGetCbInfoFn =
+            unsafe extern "C" fn(VhpiHandleT, *mut std::ffi::c_void) -> std::ffi::c_int;
+        type VhpiRegisterForeignfFn = unsafe extern "C" fn(*mut std::ffi::c_void) -> VhpiHandleT;
+        type VhpiGetForeignfInfoFn =
+            unsafe extern "C" fn(VhpiHandleT, *mut std::ffi::c_void) -> std::ffi::c_int;
+        type VhpiIsPrintableFn = unsafe extern "C" fn(std::ffi::c_char) -> std::ffi::c_int;
 
         static VHPI_ASSERT_FN: std::sync::OnceLock<VhpiAssertFn> = std::sync::OnceLock::new();
         static VHPI_REGISTER_CB_FN: std::sync::OnceLock<VhpiRegisterCbFn> =
@@ -80,6 +88,17 @@ macro_rules! define_vhpi_forwarders {
         static VHPI_CHECK_ERROR_FN: std::sync::OnceLock<VhpiCheckErrorFn> =
             std::sync::OnceLock::new();
         static VHPI_RELEASE_HANDLE_FN: std::sync::OnceLock<VhpiReleaseHandleFn> =
+            std::sync::OnceLock::new();
+        static VHPI_DISABLE_CB_FN: std::sync::OnceLock<VhpiDisableCbFn> =
+            std::sync::OnceLock::new();
+        static VHPI_ENABLE_CB_FN: std::sync::OnceLock<VhpiEnableCbFn> = std::sync::OnceLock::new();
+        static VHPI_GET_CB_INFO_FN: std::sync::OnceLock<VhpiGetCbInfoFn> =
+            std::sync::OnceLock::new();
+        static VHPI_REGISTER_FOREIGNF_FN: std::sync::OnceLock<VhpiRegisterForeignfFn> =
+            std::sync::OnceLock::new();
+        static VHPI_GET_FOREIGNF_INFO_FN: std::sync::OnceLock<VhpiGetForeignfInfoFn> =
+            std::sync::OnceLock::new();
+        static VHPI_IS_PRINTABLE_FN: std::sync::OnceLock<VhpiIsPrintableFn> =
             std::sync::OnceLock::new();
 
         macro_rules! resolve_fn {
@@ -282,6 +301,52 @@ macro_rules! define_vhpi_forwarders {
                 "vhpi_release_handle",
                 VhpiReleaseHandleFn
             )(object)
+        }
+
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn vhpi_disable_cb(cb_obj: VhpiHandleT) -> std::ffi::c_int {
+            resolve_fn!(VHPI_DISABLE_CB_FN, "vhpi_disable_cb", VhpiDisableCbFn)(cb_obj)
+        }
+
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn vhpi_enable_cb(cb_obj: VhpiHandleT) -> std::ffi::c_int {
+            resolve_fn!(VHPI_ENABLE_CB_FN, "vhpi_enable_cb", VhpiEnableCbFn)(cb_obj)
+        }
+
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn vhpi_get_cb_info(
+            object: VhpiHandleT,
+            cb_data_p: *mut std::ffi::c_void,
+        ) -> std::ffi::c_int {
+            resolve_fn!(VHPI_GET_CB_INFO_FN, "vhpi_get_cb_info", VhpiGetCbInfoFn)(object, cb_data_p)
+        }
+
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn vhpi_register_foreignf(
+            foreign_data_p: *mut std::ffi::c_void,
+        ) -> VhpiHandleT {
+            resolve_fn!(
+                VHPI_REGISTER_FOREIGNF_FN,
+                "vhpi_register_foreignf",
+                VhpiRegisterForeignfFn
+            )(foreign_data_p)
+        }
+
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn vhpi_get_foreignf_info(
+            hdl: VhpiHandleT,
+            foreign_data_p: *mut std::ffi::c_void,
+        ) -> std::ffi::c_int {
+            resolve_fn!(
+                VHPI_GET_FOREIGNF_INFO_FN,
+                "vhpi_get_foreignf_info",
+                VhpiGetForeignfInfoFn
+            )(hdl, foreign_data_p)
+        }
+
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn vhpi_is_printable(ch: std::ffi::c_char) -> std::ffi::c_int {
+            resolve_fn!(VHPI_IS_PRINTABLE_FN, "vhpi_is_printable", VhpiIsPrintableFn)(ch)
         }
 
         pub fn __link_vhpi_shim() {}
