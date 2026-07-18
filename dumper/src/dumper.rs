@@ -3,14 +3,14 @@ fn value_change(data: &vhpi::CbData) {
     let val = obj.get_value(vhpi::Format::ObjType);
     match val {
         Ok(value) => {
-            let full_name = obj.get_str(vhpi::StrProperty::FullName).unwrap();
+            let full_name = obj.get_full_name().unwrap();
             vhpi::printf!("value change {} => {}", full_name, value);
         }
         Err(err) => {
-            let full_name = obj.get_str(vhpi::StrProperty::FullName).unwrap();
+            let full_name = obj.get_full_name().unwrap_or_else(|| "unknown".to_string());
             let kind = obj.get_kind();
             let type_handle = obj.handle(vhpi::OneToOne::Type);
-            match type_handle.get_kind() {
+            match &kind {
                 Some(vhpi::ClassKind::ArrayTypeDecl) => {
                     let elem_type_handle = type_handle.handle(vhpi::OneToOne::ElemType);
                     for (index, i) in type_handle.index_range().enumerate() {
@@ -63,13 +63,26 @@ fn value_change(data: &vhpi::CbData) {
 }
 
 fn walk_region(region: &vhpi::Handle) {
+    region
+        .get_kind()
+        .map(|kind| vhpi::printf!("region {} ({:?})", region.get_name().unwrap(), kind));
     for port in region.iterator(vhpi::OneToMany::PortDecls) {
         println!(
-            "port {} ({:?})",
+            "port {} ({:?}, type {}, {:?})",
             port.get_name().unwrap(),
-            port.get_mode().unwrap()
+            port.get_mode().unwrap(),
+            port.handle(vhpi::OneToOne::Type)
+                .get_name()
+                .unwrap_or_else(|| "unknown".to_string()),
+            port.handle(vhpi::OneToOne::Type).get_kind()
         );
-        let _ = port.register_cb(vhpi::CbReason::ValueChange, value_change);
+        if let Err(e) = port.register_cb(vhpi::CbReason::ValueChange, value_change) {
+            vhpi::printf!(
+                "failed to register callback for {}: {:?}",
+                port.get_name().unwrap(),
+                e
+            );
+        }
     }
 
     for sig in region.iterator(vhpi::OneToMany::SigDecls) {
@@ -113,7 +126,13 @@ fn walk_region(region: &vhpi::Handle) {
                         println!("but failed to get value: {err}");
                     }
                 }
-                let _ = sig.register_cb(vhpi::CbReason::ValueChange, value_change);
+                if let Err(e) = sig.register_cb(vhpi::CbReason::ValueChange, value_change) {
+                    vhpi::printf!(
+                        "failed to register callback for element {}: {:?}",
+                        sig.get_name().unwrap(),
+                        e
+                    );
+                }
             }
             Some(vhpi::ClassKind::RecordTypeDecl) => {
                 println!(
@@ -137,7 +156,13 @@ fn walk_region(region: &vhpi::Handle) {
                         );
                     }
                 }
-                let _ = sig.register_cb(vhpi::CbReason::ValueChange, value_change);
+                if let Err(e) = sig.register_cb(vhpi::CbReason::ValueChange, value_change) {
+                    vhpi::printf!(
+                        "failed to register callback for element {}: {:?}",
+                        sig.get_name().unwrap(),
+                        e
+                    );
+                }
             }
             Some(vhpi::ClassKind::EnumTypeDecl) => {
                 println!(
@@ -146,7 +171,13 @@ fn walk_region(region: &vhpi::Handle) {
                     type_handle.get_name().unwrap(),
                     type_handle.enum_literals().unwrap_or_default()
                 );
-                let _ = sig.register_cb(vhpi::CbReason::ValueChange, value_change);
+                if let Err(e) = sig.register_cb(vhpi::CbReason::ValueChange, value_change) {
+                    vhpi::printf!(
+                        "failed to register callback for {}: {:?}",
+                        sig.get_name().unwrap(),
+                        e
+                    );
+                }
             }
             Some(kind) => {
                 println!(
@@ -158,13 +189,17 @@ fn walk_region(region: &vhpi::Handle) {
                 let _ = sig.register_cb(vhpi::CbReason::ValueChange, value_change);
             }
             None => {
-                println!("signal {} with unsupported kind", sig.get_name().unwrap(),);
+                println!("signal {} with unsupported kind", sig.get_name().unwrap());
             }
         }
     }
 
     for sub in region.iterator(vhpi::OneToMany::InternalRegions) {
-        println!("internal region {}", sub.get_name().unwrap());
+        println!(
+            "internal region {} ({:?})",
+            sub.get_name().unwrap(),
+            sub.get_kind().unwrap()
+        );
         walk_region(&sub);
     }
 }

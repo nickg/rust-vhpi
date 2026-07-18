@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_CRATE="dumper"
 PROFILE="debug"
 TRACE="false"
+SHOW_LOG="false"
 WORK_ROOT="${ROOT_DIR}/target/nvc-work"
 EXPECTED_MARKERS=(
   "dumper plugin loaded"
@@ -32,12 +33,14 @@ Options:
   --test <tb_name>      Run one testbench (may be passed multiple times)
   --release             Build and load release cdylib
   --trace               Enable nvc VHPI trace output
+  --show-log            Print each simulation logfile at the end of its run
   -h, --help            Show this help text
 
 Examples:
   scripts/run_vhpi_dumper.sh
   scripts/run_vhpi_dumper.sh --test tb_simple --test tb_complex
   scripts/run_vhpi_dumper.sh --release --trace
+  scripts/run_vhpi_dumper.sh --show-log
 EOF
 }
 
@@ -54,6 +57,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --trace)
       TRACE="true"
+      shift
+      ;;
+    --show-log)
+      SHOW_LOG="true"
       shift
       ;;
     -h|--help)
@@ -159,6 +166,12 @@ for tb in "${TEST_BENCHES[@]}"; do
       exit 1
     fi
   done
+
+  if [[ "$SHOW_LOG" == "true" ]]; then
+    echo "----- begin ${LOG_FILE} -----"
+    cat "$LOG_FILE"
+    echo "----- end ${LOG_FILE} -----"
+  fi
 
   echo "${tb}: ok"
 done

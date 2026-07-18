@@ -2,20 +2,28 @@
 set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PLUGIN_CRATE="stringindexing"
+PLUGIN_CRATE="cb_toggle"
 PROFILE="debug"
 TRACE="false"
 SHOW_LOG="false"
 WORK_ROOT="${ROOT_DIR}/target/nvc-work"
+EXPECTED_MARKERS=(
+    "cb_toggle plugin loaded"
+    "cb_toggle: callback disabled"
+    "cb_toggle: callback remained disabled during off window"
+    "cb_toggle: callback re-enabled"
+    "cb_toggle: callback re-enable checks passed"
+    "cb_toggle: all callback toggle checks passed"
+)
 
-TEST_BENCH="tb_string"
+TEST_BENCH="tb_cb_toggle"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/run_stringindexing.sh [options]
+Usage: scripts/run_cb_toggle_checks.sh [options]
 
-Builds the VHPI cdylib stringindexing, then compiles and runs the VHDL testbenches
-with nvc and validates key VHPI log markers.
+Builds the VHPI cdylib cb_toggle, then compiles and runs tb_cb_toggle with nvc
+and validates callback disable/enable behavior markers.
 
 Options:
   --release             Build and load release cdylib
@@ -24,13 +32,12 @@ Options:
   -h, --help            Show this help text
 
 Examples:
-  scripts/run_stringindexing.sh
-  scripts/run_stringindexing.sh --release --trace
-  scripts/run_stringindexing.sh --show-log
+  scripts/run_cb_toggle_checks.sh
+  scripts/run_cb_toggle_checks.sh --release --trace
+  scripts/run_cb_toggle_checks.sh --show-log
 EOF
 }
 
-SELECTED_TESTS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --release)
@@ -119,10 +126,17 @@ fi
 
 popd >/dev/null
 
+for marker in "${EXPECTED_MARKERS[@]}"; do
+  if ! grep -Eq "$marker" "$LOG_FILE"; then
+    echo "${TEST_BENCH}: missing marker /${marker}/" >&2
+    cat "$LOG_FILE" >&2
+    exit 1
+  fi
+done
 
 echo "${TEST_BENCH}: ok"
 
-echo "[3/3] Completed stringindexing run"
+echo "[3/3] Completed ${TEST_BENCH} run"
 echo "Logs: ${LOG_FILE}"
 
 if [[ "$SHOW_LOG" == "true" ]]; then

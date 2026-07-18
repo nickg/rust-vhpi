@@ -49,7 +49,7 @@ pub fn simulator_capabilities() -> Provides {
         )
     };
     Provides::from_bits(caps as u32)
-        .unwrap_or_else(|| panic!("Invalid capabilities bitmask: {caps:#010x}",))
+        .unwrap_or_else(|| panic!("Invalid capabilities bitmask: {caps:#010x}"))
 }
 
 #[must_use]

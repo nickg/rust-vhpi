@@ -44,4 +44,8 @@ jobs:
           nvc --version
       - name: Run VHPI+nvc matrix checks
         shell: bash
-        run: bash scripts/run_dumper_checks.sh
+        run: bash scripts/run_dumper_checks.sh --show-log
+
+      - name: Run VHPI+nvc mixed language check
+        shell: bash
+        run: bash scripts/run_dumper_mixed.sh --show-log

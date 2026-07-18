@@ -9,6 +9,7 @@ use vhpi_sys::{
 
 #[repr(u32)]
 /// VHPI one-to-one relationship selectors used with `vhpi_handle`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OneToOne {
     /// Root instance of the elaborated design.
     RootInst = vhpi_sys::vhpiOneToOneT_vhpiRootInst as u32,
@@ -172,6 +173,7 @@ pub enum OneToOne {
 
 #[repr(u32)]
 /// VHPI one-to-many relationship selectors used for indexed and iterator access.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OneToMany {
     /// Declarations contained in a scope.
     Decls = vhpi_sys::vhpiOneToManyT_vhpiDecls as u32,
@@ -300,11 +302,13 @@ pub enum OneToMany {
 /// Owned wrapper around a `vhpiHandleT`.
 ///
 /// A non-null handle is automatically released on drop.
+#[derive(Debug, Clone)]
 pub struct Handle {
     handle: vhpiHandleT,
 }
 
 /// Iterator over VHPI handles produced by `vhpi_iterator`/`vhpi_scan`.
+#[derive(Debug)]
 pub struct HandleIterator {
     pub(crate) iter: Handle,
 }
@@ -348,7 +352,7 @@ impl Handle {
         self.handle.is_null()
     }
 
-    pub(crate) fn as_raw(&self) -> vhpiHandleT {
+    pub fn as_raw(&self) -> vhpiHandleT {
         self.handle
     }
 

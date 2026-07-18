@@ -2,6 +2,52 @@ use num_traits::Zero;
 
 use crate::{check_error, Error, Physical};
 
+/// 1 femtosecond — the base VHDL time unit (`vhpiFS`).
+pub const FS: Time = Time { high: 0, low: 1 };
+/// 1 picosecond (`vhpiPS`).
+pub const PS: Time = Time {
+    high: 0,
+    low: 1_000,
+};
+/// 1 nanosecond (`vhpiNS`).
+pub const NS: Time = Time {
+    high: 0,
+    low: 1_000_000,
+};
+/// 1 microsecond (`vhpiUS`).
+pub const US: Time = Time {
+    high: 0,
+    low: 1_000_000_000,
+};
+/// 1 millisecond (`vhpiMS`).
+pub const MS: Time = Time {
+    high: 232,
+    low: 3_567_587_328,
+};
+/// 1 second (`vhpiS`).
+pub const S: Time = Time {
+    high: 232_830,
+    low: 2_764_472_320,
+};
+/// 1 minute (`vhpiMN`).
+pub const MN: Time = Time {
+    high: 13_969_838,
+    low: 2_659_581_952,
+};
+/// 1 hour (`vhpiHR`).
+pub const HR: Time = Time {
+    high: 838_190_317,
+    low: 661_127_168,
+};
+
+const PS_I64: i64 = PS.to_i64();
+const NS_I64: i64 = NS.to_i64();
+const US_I64: i64 = US.to_i64();
+const MS_I64: i64 = MS.to_i64();
+const S_I64: i64 = S.to_i64();
+const MN_I64: i64 = MN.to_i64();
+const HR_I64: i64 = HR.to_i64();
+
 #[derive(Debug, Clone, PartialEq)]
 /// Simulation time represented as a split 64-bit value.
 pub struct Time {
@@ -68,28 +114,32 @@ impl std::ops::Mul<Time> for Time {
 impl std::fmt::Display for Time {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let time = self.to_i64();
-        if !(time % 1000).is_zero() {
+        if time.is_zero() {
+            write!(f, "0")
+        } else if !(time % PS_I64).is_zero() {
             write!(f, "{time} fs")
-        } else if !(time % 1_000_000).is_zero() {
-            write!(f, "{} ps", time / 1000)
-        } else if !(time % 1_000_000_000).is_zero() {
-            write!(f, "{} ns", time / 1_000_000)
-        } else if !(time % 1_000_000_000_000).is_zero() {
-            write!(f, "{} µs", time / 1_000_000_000)
-        } else if !(time % 1_000_000_000_000_000).is_zero() {
-            write!(f, "{} ms", time / 1_000_000_000_000)
-        } else if !(time % 1_000_000_000_000_000_000).is_zero() {
-            write!(f, "{} s", time / 1_000_000_000_000_000)
+        } else if !(time % NS_I64).is_zero() {
+            write!(f, "{} ps", time / PS_I64)
+        } else if !(time % US_I64).is_zero() {
+            write!(f, "{} ns", time / NS_I64)
+        } else if !(time % MS_I64).is_zero() {
+            write!(f, "{} µs", time / US_I64)
+        } else if !(time % S_I64).is_zero() {
+            write!(f, "{} ms", time / MS_I64)
+        } else if !(time % MN_I64).is_zero() {
+            write!(f, "{} s", time / S_I64)
+        } else if !(time % HR_I64).is_zero() {
+            write!(f, "{} min", time / MN_I64)
         } else {
-            write!(f, "{} m", time / 1_000_000_000_000_000_000)
+            write!(f, "{} hr", time / HR_I64)
         }
     }
 }
 impl Time {
     #[must_use]
     /// Convert this split representation into a single `i64` value.
-    pub fn to_i64(&self) -> i64 {
-        i64::from(self.high) << 32 | i64::from(self.low)
+    pub const fn to_i64(&self) -> i64 {
+        (self.high as i64) << 32 | (self.low as i64)
     }
 }
 
@@ -138,7 +188,7 @@ pub fn get_next_time() -> (Time, NextTimeStatus) {
     let result = unsafe { vhpi_sys::vhpi_get_next_time(&raw mut time) };
 
     let status = match result {
-        -1 => NextTimeStatus::NoActivity,
+        vhpi_sys::vhpiNoActivity => NextTimeStatus::NoActivity,
         0 => NextTimeStatus::OK,
         _ => NextTimeStatus::Error(check_error()),
     };
@@ -194,12 +244,19 @@ mod tests {
 
     #[test]
     fn time_display_uses_expected_units() {
+        assert_eq!(Time::from(0_i64).to_string(), "0");
         assert_eq!(Time::from(123_i64).to_string(), "123 fs");
         assert_eq!(Time::from(123_000_i64).to_string(), "123 ps");
         assert_eq!(Time::from(123_000_000_i64).to_string(), "123 ns");
         assert_eq!(Time::from(123_000_000_000_i64).to_string(), "123 µs");
         assert_eq!(Time::from(123_000_000_000_000_i64).to_string(), "123 ms");
         assert_eq!(Time::from(123_000_000_000_000_000_i64).to_string(), "123 s");
-        assert_eq!(Time::from(1_000_000_000_000_000_000_i64).to_string(), "1 m");
+        assert_eq!(
+            Time::from(1_000_000_000_000_000_000_i64).to_string(),
+            "1000 s"
+        );
+        assert_eq!(MN.to_string(), "1 min");
+        assert_eq!(HR.to_string(), "1 hr");
+        assert_eq!((MN * Time::from(90_i64)).to_string(), "90 min");
     }
 }

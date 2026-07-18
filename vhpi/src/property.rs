@@ -10,6 +10,7 @@ use crate::{iso8859_1_cstr_to_string, Handle, Physical};
 
 #[repr(u32)]
 /// String-valued properties that can be queried from a VHPI handle.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StrProperty {
     /// Simple name of the object.
     Name = vhpi_sys::vhpiStrPropertyT_vhpiNameP as u32,
@@ -57,6 +58,7 @@ pub enum StrProperty {
 
 #[repr(u32)]
 /// Integer-valued properties that can be queried from a VHPI handle.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IntProperty {
     /// Object kind identifier.
     Kind = vhpi_sys::vhpiIntPropertyT_vhpiKindP as u32,
@@ -210,7 +212,7 @@ pub enum IntProperty {
 }
 
 #[repr(u32)]
-#[derive(Debug, FromPrimitive, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, FromPrimitive)]
 /// Floating-point properties that can be queried from a VHPI handle.
 pub enum RealProperty {
     /// Left bound of a floating-point range.
@@ -222,7 +224,7 @@ pub enum RealProperty {
 }
 
 #[repr(u32)]
-#[derive(Debug, FromPrimitive, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, FromPrimitive)]
 /// Physical-quantity properties that can be queried from a VHPI handle.
 pub enum PhysProperty {
     /// Left bound of a physical range.
@@ -240,7 +242,7 @@ pub enum PhysProperty {
 }
 
 #[repr(u32)]
-#[derive(Debug, FromPrimitive, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, FromPrimitive)]
 /// VHDL class/kind identifiers returned by `IntProperty::Kind`.
 pub enum ClassKind {
     /// Access type declaration.
@@ -485,7 +487,7 @@ impl ClassKind {
 }
 
 #[repr(u32)]
-#[derive(Debug, FromPrimitive, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, FromPrimitive)]
 /// Interface mode values returned by `IntProperty::Mode`.
 pub enum Mode {
     /// Input mode.
@@ -511,7 +513,7 @@ impl Mode {
 }
 
 #[repr(u32)]
-#[derive(Debug, FromPrimitive, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, FromPrimitive)]
 /// Signal kind values returned by `IntProperty::SigKind`.
 pub enum SigKind {
     /// Register signal.
@@ -533,7 +535,7 @@ impl SigKind {
 }
 
 #[repr(u32)]
-#[derive(Debug, FromPrimitive, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, FromPrimitive)]
 /// Staticness classification returned by `IntProperty::Staticness`.
 pub enum Staticness {
     /// Locally static expression/object.
@@ -555,7 +557,7 @@ impl Staticness {
 }
 
 #[repr(u32)]
-#[derive(Debug, FromPrimitive, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, FromPrimitive)]
 /// Predefined VHDL attributes returned by `IntProperty::PredefAttr`.
 pub enum PredefAttr {
     /// `'active`.

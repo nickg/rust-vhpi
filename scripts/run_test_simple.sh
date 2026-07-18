@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_CRATE="test_simple"
 PROFILE="debug"
 TRACE="false"
+SHOW_LOG="false"
 WORK_ROOT="${ROOT_DIR}/target/nvc-work"
 EXPECTED_MARKERS=(
     "test_simple plugin loaded"
@@ -23,11 +24,13 @@ with nvc and validates key VHPI log markers.
 Options:
   --release             Build and load release cdylib
   --trace               Enable nvc VHPI trace output
+  --show-log            Print simulation logfile at the end
   -h, --help            Show this help text
 
 Examples:
   scripts/run_test_simple.sh
   scripts/run_test_simple.sh --release --trace
+  scripts/run_test_simple.sh --show-log
 EOF
 }
 
@@ -40,6 +43,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --trace)
       TRACE="true"
+      shift
+      ;;
+    --show-log)
+      SHOW_LOG="true"
       shift
       ;;
     -h|--help)
@@ -128,3 +135,9 @@ echo "${TEST_BENCH}: ok"
 
 echo "[3/3] Completed ${TEST_BENCH} run"
 echo "Logs: ${LOG_FILE}"
+
+if [[ "$SHOW_LOG" == "true" ]]; then
+  echo "----- begin ${LOG_FILE} -----"
+  cat "$LOG_FILE"
+  echo "----- end ${LOG_FILE} -----"
+fi

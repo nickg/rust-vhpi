@@ -2,20 +2,25 @@
 set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PLUGIN_CRATE="stringindexing"
+PLUGIN_CRATE="dumper"
 PROFILE="debug"
 TRACE="false"
 SHOW_LOG="false"
 WORK_ROOT="${ROOT_DIR}/target/nvc-work"
-
-TEST_BENCH="tb_string"
+MIXED_DIR="${ROOT_DIR}/test_examples/mixed"
+TEST_BENCH="tb_mixed"
+EXPECTED_MARKERS=(
+  "dumper plugin loaded"
+  "start of simulation"
+  "end of simulation"
+)
 
 usage() {
   cat <<'EOF'
-Usage: scripts/run_stringindexing.sh [options]
+Usage: scripts/run_dumper_mixed.sh [options]
 
-Builds the VHPI cdylib stringindexing, then compiles and runs the VHDL testbenches
-with nvc and validates key VHPI log markers.
+Builds the VHPI dumper plugin, compiles mixed-language test files from
+test_examples/mixed/, then elaborates and runs tb_mixed with nvc.
 
 Options:
   --release             Build and load release cdylib
@@ -24,13 +29,12 @@ Options:
   -h, --help            Show this help text
 
 Examples:
-  scripts/run_stringindexing.sh
-  scripts/run_stringindexing.sh --release --trace
-  scripts/run_stringindexing.sh --show-log
+  scripts/run_dumper_mixed.sh
+  scripts/run_dumper_mixed.sh --release --trace
+  scripts/run_dumper_mixed.sh --show-log
 EOF
 }
 
-SELECTED_TESTS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --release)
@@ -57,10 +61,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ ! -f "${ROOT_DIR}/test_examples/${TEST_BENCH}.vhdl" ]]; then
-  echo "Missing VHDL file: ${ROOT_DIR}/test_examples/${TEST_BENCH}.vhdl" >&2
-  exit 2
-fi
+for src in "mixed_leaf.v" "dut.v" "tb_mixed.vhdl"; do
+  if [[ ! -f "${MIXED_DIR}/${src}" ]]; then
+    echo "Missing source file: ${MIXED_DIR}/${src}" >&2
+    exit 2
+  fi
+done
 
 echo "[1/3] Building VHPI plugin crate '${PLUGIN_CRATE}' (${PROFILE})"
 if [[ "$PROFILE" == "release" ]]; then
@@ -93,10 +99,10 @@ if [[ ! -f "$PLUGIN_SO" ]]; then
   fi
 fi
 
-echo "[2/3] Running nvc compile/elab/sim checks"
+echo "[2/3] Running nvc mixed-language compile/elab/sim checks"
 mkdir -p "$WORK_ROOT"
 
-RUN_DIR="${WORK_ROOT}/${PLUGIN_CRATE}"
+RUN_DIR="${WORK_ROOT}/${PLUGIN_CRATE}/mixed"
 LOG_FILE="${RUN_DIR}/run.log"
 
 rm -rf "$RUN_DIR"
@@ -104,25 +110,51 @@ mkdir -p "$RUN_DIR"
 
 pushd "$RUN_DIR" >/dev/null
 
-echo "--- ${TEST_BENCH}: compile"
-nvc -a "${ROOT_DIR}/test_examples/${TEST_BENCH}.vhdl"
+echo "--- ${TEST_BENCH}: compile mixed_leaf.v"
+nvc -a "${MIXED_DIR}/mixed_leaf.v"
+
+echo "--- ${TEST_BENCH}: compile dut.v"
+nvc -a "${MIXED_DIR}/dut.v"
+
+echo "--- ${TEST_BENCH}: compile tb_mixed.vhdl"
+nvc -a "${MIXED_DIR}/tb_mixed.vhdl"
 
 echo "--- ${TEST_BENCH}: elaborate"
 nvc -e "$TEST_BENCH"
 
 echo "--- ${TEST_BENCH}: simulate"
 if [[ "$TRACE" == "true" ]]; then
-  nvc --vhpi-trace -r "$TEST_BENCH" --load="$PLUGIN_SO" >"$LOG_FILE" 2>&1
+  if nvc --vhpi-trace -r "$TEST_BENCH" --load="$PLUGIN_SO" >"$LOG_FILE" 2>&1; then
+    :
+  else
+    status=$?
+    echo "${TEST_BENCH}: simulation failed, log follows (${LOG_FILE})" >&2
+    cat "$LOG_FILE" >&2 || true
+    exit "$status"
+  fi
 else
-  nvc -r "$TEST_BENCH" --load="$PLUGIN_SO" >"$LOG_FILE" 2>&1
+  if nvc -r "$TEST_BENCH" --load="$PLUGIN_SO" >"$LOG_FILE" 2>&1; then
+    :
+  else
+    status=$?
+    echo "${TEST_BENCH}: simulation failed, log follows (${LOG_FILE})" >&2
+    cat "$LOG_FILE" >&2 || true
+    exit "$status"
+  fi
 fi
 
 popd >/dev/null
 
+for marker in "${EXPECTED_MARKERS[@]}"; do
+  if ! grep -Eq "$marker" "$LOG_FILE"; then
+    echo "${TEST_BENCH}: missing marker /${marker}/" >&2
+    cat "$LOG_FILE" >&2
+    exit 1
+  fi
+done
 
 echo "${TEST_BENCH}: ok"
-
-echo "[3/3] Completed stringindexing run"
+echo "[3/3] Completed ${TEST_BENCH} run"
 echo "Logs: ${LOG_FILE}"
 
 if [[ "$SHOW_LOG" == "true" ]]; then

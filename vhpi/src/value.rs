@@ -3,6 +3,7 @@ use crate::string_to_iso8859_1_cstring;
 use crate::Error;
 use crate::Handle;
 use crate::LogicVal;
+use crate::LogicVec;
 use crate::Physical;
 use crate::Time;
 
@@ -35,7 +36,7 @@ pub enum Value {
     /// Scalar logic value.
     Logic(LogicVal),
     /// Vector of logic values.
-    LogicVec(Vec<LogicVal>),
+    LogicVec(LogicVec),
     /// Scalar small-enum value.
     SmallEnum(u8),
     /// Vector of small-enum values.
@@ -81,10 +82,7 @@ impl fmt::Display for Value {
             Value::Char(c) => write!(f, "{c}"),
             Value::Logic(n) => write!(f, "{n}"),
             Value::LogicVec(v) => {
-                for val in v {
-                    write!(f, "{val}")?;
-                }
-                Ok(())
+                write!(f, "{v}")
             }
             Value::SmallEnum(n) => write!(f, "{n}"),
             Value::SmallEnumVec(v) => {
@@ -313,7 +311,8 @@ impl From<Format> for vhpi_sys::vhpiFormatT {
     }
 }
 
-/// Write mode used by Handle::put_value.
+/// Write mode used by `Handle::put_value`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PutValueMode {
     /// Deposit a value without forcing.
     Deposit,
@@ -342,6 +341,7 @@ impl From<PutValueMode> for vhpi_sys::vhpiPutValueModeT {
     }
 }
 
+#[derive(Debug)]
 enum VectorBox {
     #[allow(dead_code)]
     Enum(Vec<vhpi_sys::vhpiEnumT>),
@@ -559,11 +559,7 @@ impl Handle {
             vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
                 let slice =
                     unsafe { std::slice::from_raw_parts(val.value.enumvs, val.numElems as usize) };
-                let logic_vec: Vec<LogicVal> = slice
-                    .iter()
-                    .map(|&enumv| LogicVal::from(enumv as u8))
-                    .collect();
-                Ok(Value::LogicVec(logic_vec))
+                Ok(LogicVec::from_slice(slice).as_value())
             }
             vhpi_sys::vhpiFormatT_vhpiRealVecVal => {
                 let slice = unsafe {
@@ -843,12 +839,9 @@ impl Handle {
 
 /// Convert a string to a [`Value::LogicVec`] by mapping each character to a [`LogicVal`] using the character's byte value.
 #[must_use]
+#[deprecated(since = "0.5.0", note = "Use `LogicVec::from(s).as_value()` instead")]
 pub fn string_to_logic_vec(s: &str) -> Value {
-    Value::LogicVec(
-        s.chars()
-            .map(|c| LogicVal::try_from(c).unwrap_or(LogicVal::Unknown(c as u8)))
-            .collect(),
-    )
+    LogicVec::from(s).as_value()
 }
 
 #[must_use]
@@ -856,20 +849,12 @@ pub fn string_to_logic_vec(s: &str) -> Value {
 ///
 /// Each bit of the integer is mapped to a [`LogicVal`].
 /// If the integer cannot fit into the specified width, it will be truncated.
-pub fn uint_to_logic_vec(mut value: u64, width: usize) -> Value {
-    assert!(width <= 64, "Width must be 64 or less to fit into u64");
-    let mut logic_vec = Vec::with_capacity(width);
-    for _ in 0..width {
-        let bit = (value & 1) as u8;
-        logic_vec.push(if bit.is_zero() {
-            LogicVal::Zero
-        } else {
-            LogicVal::One
-        });
-        value >>= 1;
-    }
-    logic_vec.reverse();
-    Value::LogicVec(logic_vec)
+#[deprecated(
+    since = "0.5.0",
+    note = "Use `LogicVec::new_from_unsigned_integer` and `LogicVec::as_value` instead"
+)]
+pub fn uint_to_logic_vec(value: impl Into<u64>, width: usize) -> Value {
+    LogicVec::from_uint(value, width).as_value()
 }
 
 #[must_use]
@@ -877,20 +862,12 @@ pub fn uint_to_logic_vec(mut value: u64, width: usize) -> Value {
 ///
 /// Each bit of the integer is mapped to a [`LogicVal`].
 /// If the integer cannot fit into the specified width, it will be truncated.
-pub fn int_to_logic_vec(mut value: i64, width: usize) -> Value {
-    assert!(width <= 64, "Width must be 64 or less to fit into i64");
-    let mut logic_vec = Vec::with_capacity(width);
-    for _ in 0..width {
-        let bit = (value & 1) as u8;
-        logic_vec.push(if bit.is_zero() {
-            LogicVal::Zero
-        } else {
-            LogicVal::One
-        });
-        value >>= 1;
-    }
-    logic_vec.reverse();
-    Value::LogicVec(logic_vec)
+#[deprecated(
+    since = "0.5.0",
+    note = "Use `LogicVec::new_from_signed_integer` and `LogicVec::as_value` instead"
+)]
+pub fn int_to_logic_vec(value: impl Into<i64>, width: usize) -> Value {
+    LogicVec::from_int(value, width).as_value()
 }
 
 #[must_use]
@@ -898,9 +875,10 @@ pub fn int_to_logic_vec(mut value: i64, width: usize) -> Value {
 ///
 /// [`LogicVal::Zero`] represents 0 and [`LogicVal::One`] represents 1.
 /// If any value in the vector is not `Zero` or `One`, return `None`.
-pub fn logic_vec_to_uint(logic_vec: &[LogicVal]) -> Option<u64> {
+#[deprecated(since = "0.5.0", note = "Use `LogicVec::as_u64` instead")]
+pub fn logic_vec_to_uint(logic_vec: impl AsRef<[LogicVal]>) -> Option<u64> {
     let mut value = 0u64;
-    for &logic_val in logic_vec {
+    for &logic_val in logic_vec.as_ref() {
         value <<= 1;
         match logic_val {
             LogicVal::Zero => {}
@@ -916,7 +894,9 @@ pub fn logic_vec_to_uint(logic_vec: &[LogicVal]) -> Option<u64> {
 ///
 /// [`LogicVal::Zero`] represents 0 and [`LogicVal::One`] represents 1.
 /// If any value in the vector is not `Zero` or `One`, return `None`.
-pub fn logic_vec_to_int(logic_vec: &[LogicVal]) -> Option<i64> {
+#[deprecated(since = "0.5.0", note = "Use `LogicVec::as_i64` instead")]
+pub fn logic_vec_to_int(logic_vec: impl AsRef<[LogicVal]>) -> Option<i64> {
+    let logic_vec = logic_vec.as_ref();
     if logic_vec.len() > 64 {
         return None;
     }
@@ -947,7 +927,9 @@ pub fn logic_vec_to_int(logic_vec: &[LogicVal]) -> Option<i64> {
 ///
 /// [ `LogicVal::Zero`] represents 0 and [ `LogicVal::One`] represents 1.
 /// If any value in the vector is not `Zero` or `One`, return `None`.
-pub fn logic_vec_to_bigint(logic_vec: &[LogicVal]) -> Option<BigInt> {
+#[deprecated(since = "0.5.0", note = "Use `LogicVec::as_bigint` instead")]
+pub fn logic_vec_to_bigint(logic_vec: impl AsRef<[LogicVal]>) -> Option<BigInt> {
+    let logic_vec = logic_vec.as_ref();
     let mut value = BigInt::ZERO;
     let one = BigInt::one();
     for &logic_val in logic_vec {
@@ -973,7 +955,9 @@ pub fn logic_vec_to_bigint(logic_vec: &[LogicVal]) -> Option<BigInt> {
 ///
 /// [`LogicVal::Zero`] represents 0 and [ `LogicVal::One`] represents 1.
 /// If any value in the vector is not `Zero` or `One`, return `None`.
-pub fn logic_vec_to_biguint(logic_vec: &[LogicVal]) -> Option<BigUint> {
+#[deprecated(since = "0.5.0", note = "Use `LogicVec::as_bigint` instead")]
+pub fn logic_vec_to_biguint(logic_vec: impl AsRef<[LogicVal]>) -> Option<BigUint> {
+    let logic_vec = logic_vec.as_ref();
     let mut value = BigUint::ZERO;
     let one = BigUint::one();
     for &logic_val in logic_vec {
@@ -995,6 +979,10 @@ pub fn logic_vec_to_biguint(logic_vec: &[LogicVal]) -> Option<BigUint> {
 /// The most significant bit of the integer corresponds to the first element of the vector.
 /// [`LogicVal::Zero`] represents 0 and [ `LogicVal::One`] represents 1.
 /// If the integer cannot fit into the specified width, it will be truncated.
+#[deprecated(
+    since = "0.5.0",
+    note = "Use `LogicVec::new_from_bigint` and `LogicVec::as_value` instead"
+)]
 pub fn bigint_to_logic_vec(value: &BigInt, width: usize) -> Value {
     let mut logic_vec = Vec::with_capacity(width);
     let mut temp = value.clone();
@@ -1009,7 +997,7 @@ pub fn bigint_to_logic_vec(value: &BigInt, width: usize) -> Value {
         temp >>= 1;
     }
     logic_vec.reverse();
-    Value::LogicVec(logic_vec)
+    LogicVec::new(logic_vec).as_value()
 }
 
 #[cfg(feature = "bigint")]
@@ -1019,6 +1007,10 @@ pub fn bigint_to_logic_vec(value: &BigInt, width: usize) -> Value {
 /// Each bit of the integer is mapped to a [`LogicVal`].
 /// The most significant bit of the integer corresponds to the first element of the vector.
 /// If the integer cannot fit into the specified width, it will be truncated.
+#[deprecated(
+    since = "0.5.0",
+    note = "Use `LogicVec::new_from_biguint` and `LogicVec::as_value` instead"
+)]
 pub fn biguint_to_logic_vec(value: &BigUint, width: usize) -> Value {
     let mut logic_vec = Vec::with_capacity(width);
     let mut temp = value.clone();
@@ -1033,7 +1025,7 @@ pub fn biguint_to_logic_vec(value: &BigUint, width: usize) -> Value {
         temp >>= 1;
     }
     logic_vec.reverse();
-    Value::LogicVec(logic_vec)
+    LogicVec::new(logic_vec).as_value()
 }
 
 #[cfg(test)]
@@ -1044,10 +1036,10 @@ mod tests {
     fn string_to_logic_capital_letters() {
         let input = "UX01ZWLH-";
 
-        let parsed = string_to_logic_vec(input);
+        let parsed = LogicVec::from(input);
         assert_eq!(
             parsed,
-            Value::LogicVec(vec![
+            LogicVec::new(vec![
                 LogicVal::U,
                 LogicVal::X,
                 LogicVal::Zero,
@@ -1065,10 +1057,10 @@ mod tests {
     fn string_to_logic_small_letters() {
         let input = "ux01zwlh-";
 
-        let parsed = string_to_logic_vec(input);
+        let parsed = LogicVec::from(input);
         assert_eq!(
             parsed,
-            Value::LogicVec(vec![
+            LogicVec::new(vec![
                 LogicVal::U,
                 LogicVal::X,
                 LogicVal::Zero,
@@ -1084,212 +1076,14 @@ mod tests {
 
     #[test]
     fn string_to_logic_vec_returns_empty_for_empty_string() {
-        assert_eq!(string_to_logic_vec(""), Value::LogicVec(vec![]));
-    }
-
-    #[test]
-    fn string_to_logic_vec_maps_unknown_chars_to_unknown_logic_values() {
-        assert_eq!(
-            string_to_logic_vec("A"),
-            Value::LogicVec(vec![LogicVal::Unknown(b'A')])
-        );
+        assert_eq!(LogicVec::from(""), LogicVec::new(vec![]));
     }
 
     #[test]
     fn uint_to_logic_vec_converts_correctly() {
         assert_eq!(
-            uint_to_logic_vec(0b101, 3),
-            Value::LogicVec(vec![LogicVal::One, LogicVal::Zero, LogicVal::One])
+            LogicVec::from_uint(0b110u8, 3),
+            LogicVec::new(vec![LogicVal::One, LogicVal::One, LogicVal::Zero])
         );
-    }
-
-    #[test]
-    fn logic_vec_to_uint_converts_correctly() {
-        assert_eq!(
-            logic_vec_to_uint(&[LogicVal::One, LogicVal::Zero, LogicVal::One]),
-            Some(5)
-        );
-        assert_eq!(
-            logic_vec_to_uint(&[LogicVal::One, LogicVal::Zero, LogicVal::Unknown(0)]),
-            None
-        );
-    }
-
-    #[test]
-    fn logic_vec_to_int_converts_correctly() {
-        assert_eq!(
-            logic_vec_to_int(&[LogicVal::One, LogicVal::Zero, LogicVal::One]),
-            Some(-3)
-        );
-        assert_eq!(
-            logic_vec_to_int(&[LogicVal::One, LogicVal::Zero, LogicVal::Zero]),
-            Some(-4)
-        );
-        assert_eq!(
-            logic_vec_to_int(&[LogicVal::Zero, LogicVal::Zero, LogicVal::One]),
-            Some(1)
-        );
-        assert_eq!(
-            logic_vec_to_int(&[LogicVal::One, LogicVal::Zero, LogicVal::Unknown(0)]),
-            None
-        );
-    }
-
-    #[test]
-    fn logic_vec_to_int_rejects_width_over_64_bits() {
-        let bits = vec![LogicVal::Zero; 65];
-        assert_eq!(logic_vec_to_int(&bits), None);
-    }
-
-    #[test]
-    fn int_to_logic_vec_converts_correctly() {
-        assert_eq!(
-            int_to_logic_vec(-3, 3),
-            Value::LogicVec(vec![LogicVal::One, LogicVal::Zero, LogicVal::One])
-        );
-        assert_eq!(
-            int_to_logic_vec(-4, 3),
-            Value::LogicVec(vec![LogicVal::One, LogicVal::Zero, LogicVal::Zero])
-        );
-        assert_eq!(
-            int_to_logic_vec(1, 3),
-            Value::LogicVec(vec![LogicVal::Zero, LogicVal::Zero, LogicVal::One])
-        );
-    }
-
-    #[cfg(feature = "bigint")]
-    #[test]
-    fn logic_vec_to_bigint_converts_correctly() {
-        assert_eq!(
-            logic_vec_to_bigint(&[LogicVal::One, LogicVal::Zero, LogicVal::One]),
-            Some(num_bigint::BigInt::from(-3i8))
-        );
-        assert_eq!(
-            logic_vec_to_bigint(&[LogicVal::Zero, LogicVal::Zero, LogicVal::One]),
-            Some(num_bigint::BigInt::from(1u8))
-        );
-        assert_eq!(
-            logic_vec_to_bigint(&[LogicVal::One, LogicVal::Zero, LogicVal::Zero]),
-            Some(num_bigint::BigInt::from(-4i8))
-        );
-        assert_eq!(
-            logic_vec_to_bigint(&[]),
-            Some(num_bigint::BigInt::from(0u8))
-        );
-    }
-
-    #[cfg(feature = "bigint")]
-    #[test]
-    fn logic_vec_to_bigint_returns_none_for_non_binary_values() {
-        assert_eq!(
-            logic_vec_to_bigint(&[LogicVal::One, LogicVal::Unknown(0), LogicVal::Zero]),
-            None
-        );
-    }
-
-    #[cfg(feature = "bigint")]
-    #[test]
-    fn logic_vec_to_biguint_converts_correctly() {
-        assert_eq!(
-            logic_vec_to_biguint(&[LogicVal::One, LogicVal::Zero, LogicVal::One]),
-            Some(num_bigint::BigUint::from(5u8))
-        );
-        assert_eq!(
-            logic_vec_to_biguint(&[]),
-            Some(num_bigint::BigUint::from(0u8))
-        );
-        assert_eq!(
-            logic_vec_to_biguint(&[LogicVal::One, LogicVal::Unknown(0), LogicVal::Zero]),
-            None
-        );
-    }
-
-    #[cfg(feature = "bigint")]
-    #[test]
-    fn bigint_to_logic_vec_converts_signed_values() {
-        assert_eq!(
-            bigint_to_logic_vec(&num_bigint::BigInt::from(-3i8), 3),
-            Value::LogicVec(vec![LogicVal::One, LogicVal::Zero, LogicVal::One])
-        );
-        assert_eq!(
-            bigint_to_logic_vec(&num_bigint::BigInt::from(2u8), 3),
-            Value::LogicVec(vec![LogicVal::Zero, LogicVal::One, LogicVal::Zero])
-        );
-    }
-
-    #[cfg(feature = "bigint")]
-    #[test]
-    fn biguint_to_logic_vec_converts_values() {
-        assert_eq!(
-            biguint_to_logic_vec(&num_bigint::BigUint::from(5u8), 3),
-            Value::LogicVec(vec![LogicVal::One, LogicVal::Zero, LogicVal::One])
-        );
-        assert_eq!(
-            biguint_to_logic_vec(&num_bigint::BigUint::from(0u8), 4),
-            Value::LogicVec(vec![
-                LogicVal::Zero,
-                LogicVal::Zero,
-                LogicVal::Zero,
-                LogicVal::Zero,
-            ])
-        );
-    }
-
-    #[cfg(feature = "bigint")]
-    #[test]
-    fn bigint_and_biguint_round_trip_with_logic_vec() {
-        let signed_bits = vec![LogicVal::One, LogicVal::Zero, LogicVal::One, LogicVal::One];
-        let signed_value = logic_vec_to_bigint(&signed_bits).unwrap();
-        assert_eq!(
-            bigint_to_logic_vec(&signed_value, signed_bits.len()),
-            Value::LogicVec(signed_bits)
-        );
-
-        let unsigned_bits = vec![LogicVal::One, LogicVal::Zero, LogicVal::One, LogicVal::One];
-        let unsigned_value = logic_vec_to_biguint(&unsigned_bits).unwrap();
-        assert_eq!(
-            biguint_to_logic_vec(&unsigned_value, unsigned_bits.len()),
-            Value::LogicVec(unsigned_bits)
-        );
-    }
-
-    #[cfg(feature = "bigint")]
-    #[test]
-    fn biguint_large_round_trip_with_logic_vec() {
-        use num_bigint::BigUint;
-        use num_traits::Num;
-
-        let original =
-            BigUint::from_str_radix("1234567890abcdef1234567890abcdef1234567890abcdef", 16)
-                .unwrap();
-        let width = 192;
-
-        let as_logic = biguint_to_logic_vec(&original, width);
-        let round_trip = match as_logic {
-            Value::LogicVec(bits) => logic_vec_to_biguint(&bits),
-            _ => None,
-        };
-
-        assert_eq!(round_trip, Some(original));
-    }
-
-    #[cfg(feature = "bigint")]
-    #[test]
-    fn bigint_large_round_trip_with_logic_vec() {
-        use num_bigint::BigInt;
-        use num_traits::Num;
-
-        let magnitude =
-            BigInt::from_str_radix("1234567890abcdef1234567890abcdef1234567890abcdef", 16).unwrap();
-        let original = -magnitude;
-        let width = 193;
-
-        let as_logic = bigint_to_logic_vec(&original, width);
-        let round_trip = match as_logic {
-            Value::LogicVec(bits) => logic_vec_to_bigint(&bits),
-            _ => None,
-        };
-
-        assert_eq!(round_trip, Some(original));
     }
 }

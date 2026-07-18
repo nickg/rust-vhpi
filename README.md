@@ -5,9 +5,11 @@ Project structure
 * `vhpi-sys/` - raw low-level generated bindings to C API.
 * `vhpi/` - higher level Rust bindings.
 * `vhpi-shim/` - platform shim library used by the `dynamic` feature.
-* `dumper/` - example plugin.
+* `dumper/` - example plugin dumping much information about the design.
 * `tests/test_simple/` - assertion-based plugin for `tb_simple` checkpoints.
 * `tests/stringindexing/` - plugin that checks string indexing.
+* `tests/cb_toggle/` - plugin that disables/enables callbacks.
+* `tests/foreignf` - plugin that implements foreign functions through VHPI.
 
 Test with the example plugin
 

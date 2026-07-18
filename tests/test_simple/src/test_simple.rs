@@ -2,9 +2,7 @@ use std::cell::RefCell;
 use std::sync::atomic::{AtomicI64, AtomicUsize, Ordering};
 use std::sync::LazyLock;
 
-use vhpi::{
-    string_to_logic_vec, CbData, CbReason, Format, LogicVal, OneToOne, PutValueMode, Value,
-};
+use vhpi::{CbData, CbReason, Format, LogicVal, LogicVec, OneToOne, PutValueMode, Value};
 
 #[derive(Clone)]
 struct Checkpoint {
@@ -92,8 +90,8 @@ static INJECTED_CHECKS: LazyLock<[InjectedCheck; 2]> = LazyLock::new(|| {
             deposit_time_fs: 15_000_000,
             check_delay_fs: 1_000_000,
             signal_name: "v_x",
-            deposit_value: string_to_logic_vec("-HUW"),
-            expected_value: string_to_logic_vec("-HUW"),
+            deposit_value: LogicVec::from("-HUW").as_value(),
+            expected_value: LogicVec::from("-HUW").as_value(),
         },
     ]
 });
@@ -150,10 +148,7 @@ fn read_value(sig: &vhpi::Handle, name: &str) -> Value {
 
 fn read_logic_vector(sig: &vhpi::Handle, name: &str) -> String {
     match sig.get_value(Format::ObjType) {
-        Ok(Value::LogicVec(bits)) => bits
-            .into_iter()
-            .map(|bit| bit.to_string())
-            .collect::<String>(),
+        Ok(Value::LogicVec(bits)) => bits.to_string(),
         Ok(Value::BinStr(s)) => s,
         Ok(other) => panic!("{name} expected LogicVec/BinStr, got {other:?}"),
         Err(err) => panic!("failed to read {name}: {err}"),
