@@ -229,6 +229,32 @@ impl LogicVec {
         Self { data }
     }
 
+    /// Returns a vector of bytes representing the VCD value of this `LogicVec`.
+    pub fn as_vcd_value(&self) -> Vec<u8> {
+        let mut vcd_value = self.data.iter().map(|val| u8::from(*val)).collect::<Vec<u8>>();
+        // Remove leading x from the VCD value representation, but keep the last x.
+        while vcd_value.first() == Some(&b'x') && vcd_value.len() > 1 {
+            if vcd_value.iter().nth(1) == Some(&b'x') {
+                vcd_value.remove(0);
+            } else {
+                break;
+            }
+        }
+        while vcd_value.first() == Some(&b'z') && vcd_value.len() > 1 {
+            if vcd_value.iter().nth(1) == Some(&b'z') {
+                vcd_value.remove(0);
+            } else {
+                break;
+            }
+        }
+        // Remove leading zeros from the VCD value representation.
+        while vcd_value.first() == Some(&b'0') && vcd_value.len() > 1 {
+             vcd_value.remove(0);
+        }
+
+        vcd_value
+    }
+
     /// Builds a logic vector from an unsigned integer.
     ///
     /// The resulting vector is stored most-significant-bit first.
@@ -490,6 +516,41 @@ mod tests {
             LogicVec::from("10A1").as_slice(),
             &[LogicVal::One, LogicVal::Zero, LogicVal::X, LogicVal::One]
         );
+    }
+
+    #[test]
+    fn logic_vec_as_vcd_value_trims_leading_zeros() {
+        let value = LogicVec::from("000101");
+
+        assert_eq!(value.as_vcd_value(), b"101");
+    }
+
+    #[test]
+    fn logic_vec_as_vcd_value_keeps_single_zero() {
+        let value = LogicVec::from("0000");
+
+        assert_eq!(value.as_vcd_value(), b"0");
+    }
+
+    #[test]
+    fn logic_vec_as_vcd_value_trims_redundant_leading_x() {
+        let value = LogicVec::from("xxxx1");
+
+        assert_eq!(value.as_vcd_value(), b"x1");
+    }
+
+    #[test]
+    fn logic_vec_as_vcd_value_trims_redundant_leading_z() {
+        let value = LogicVec::from("zzzz0");
+
+        assert_eq!(value.as_vcd_value(), b"z0");
+    }
+
+    #[test]
+    fn logic_vec_as_vcd_value_does_not_trim_mixed_unknown_prefixes() {
+        let value = LogicVec::from("xxz1");
+
+        assert_eq!(value.as_vcd_value(), b"xz1");
     }
 
     #[test]
