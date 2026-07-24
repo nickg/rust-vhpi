@@ -417,7 +417,7 @@ impl Handle {
             );
         }
 
-        Ok((Format::from(val.format), rc))
+        Ok((Format::from(val.format), val.numElems))
     }
 
     /// Read a value from this handle using the requested format.

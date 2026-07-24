@@ -45,7 +45,7 @@ checksum = "843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af"
 
 [[package]]
 name = "cb_toggle"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "vhpi",
 ]
@@ -78,7 +78,7 @@ dependencies = [
 
 [[package]]
 name = "dumper"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "vhpi",
 ]
@@ -91,7 +91,7 @@ checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
 name = "foreignf"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "vhpi",
 ]
@@ -265,7 +265,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "stringindexing"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "vhpi",
 ]
@@ -294,7 +294,7 @@ dependencies = [
 
 [[package]]
 name = "test_simple"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "vhpi",
 ]
@@ -307,7 +307,7 @@ checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
 name = "vhpi"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "bitflags",
  "num-bigint",
@@ -318,11 +318,11 @@ dependencies = [
 
 [[package]]
 name = "vhpi-shim"
-version = "0.5.0"
+version = "0.5.1"
 
 [[package]]
 name = "vhpi-sys"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "bindgen",
  "vhpi-shim",
