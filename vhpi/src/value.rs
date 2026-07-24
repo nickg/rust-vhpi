@@ -1,5 +1,7 @@
 use crate::iso8859_1_val_to_string;
 use crate::string_to_iso8859_1_cstring;
+use crate::BitVal;
+use crate::BooleanVal;
 use crate::Error;
 use crate::Handle;
 use crate::LogicVal;
@@ -15,6 +17,94 @@ use num_bigint::{BigInt, BigUint};
 #[cfg(feature = "bigint")]
 use num_traits::One;
 use num_traits::Zero;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum NativeVectorKind {
+    Logic,
+    Bit,
+    Boolean,
+}
+
+fn base_type(handle: &Handle) -> Handle {
+    let mut current = handle.clone();
+    loop {
+        let next = current.handle(crate::OneToOne::BaseType);
+        if next.is_null() || next == current {
+            return current;
+        }
+        current = next;
+    }
+}
+
+fn is_named_type(handle: &Handle, expected: &str) -> bool {
+    handle
+        .get_name()
+        .is_some_and(|name| name.eq_ignore_ascii_case(expected))
+}
+
+fn native_vector_kind(handle: &Handle) -> NativeVectorKind {
+    let declared_type = handle.handle(crate::OneToOne::Type);
+    let array_type = base_type(&declared_type);
+    let declared_element_type = declared_type.handle(crate::OneToOne::ElemType);
+    let element_type = base_type(&declared_element_type);
+
+    if is_named_type(&declared_type, "BIT_VECTOR") || is_named_type(&array_type, "BIT_VECTOR") {
+        return NativeVectorKind::Bit;
+    }
+
+    if is_named_type(&declared_type, "BOOLEAN_VECTOR")
+        || is_named_type(&array_type, "BOOLEAN_VECTOR")
+    {
+        return NativeVectorKind::Boolean;
+    }
+
+    if is_named_type(&declared_element_type, "BIT") || is_named_type(&element_type, "BIT") {
+        return NativeVectorKind::Bit;
+    }
+
+    if is_named_type(&declared_element_type, "BOOLEAN") || is_named_type(&element_type, "BOOLEAN") {
+        return NativeVectorKind::Boolean;
+    }
+
+    let Some(literals) = element_type.enum_literals() else {
+        return NativeVectorKind::Logic;
+    };
+
+    if literals.len() == 2 && literals[0] == "'0'" && literals[1] == "'1'" {
+        NativeVectorKind::Bit
+    } else if literals.len() == 2
+        && literals[0].eq_ignore_ascii_case("false")
+        && literals[1].eq_ignore_ascii_case("true")
+    {
+        NativeVectorKind::Boolean
+    } else {
+        NativeVectorKind::Logic
+    }
+}
+
+fn bit_vec_from_slice(slice: &[vhpi_sys::vhpiEnumT]) -> Option<Value> {
+    let values = slice
+        .iter()
+        .map(|&raw| BitVal::from_raw(raw))
+        .collect::<Option<Vec<_>>>()?;
+    Some(Value::BitVec(values))
+}
+
+fn boolean_vec_from_enum_slice(slice: &[vhpi_sys::vhpiEnumT]) -> Option<Value> {
+    let values = slice
+        .iter()
+        .map(|&raw| BooleanVal::from_raw(raw))
+        .collect::<Option<Vec<_>>>()?;
+    Some(Value::BooleanVec(values))
+}
+
+fn boolean_vec_from_small_enum_slice(slice: &[vhpi_sys::vhpiSmallEnumT]) -> Option<Value> {
+    let values = slice
+        .iter()
+        .map(|&raw| BooleanVal::from_raw(u32::from(raw)))
+        .collect::<Option<Vec<_>>>()?;
+    Some(Value::BooleanVec(values))
+}
 
 #[derive(Debug, PartialEq, Clone)]
 /// Strongly typed representation of values exchanged through VHPI.
@@ -67,6 +157,10 @@ pub enum Value {
     Physical(Physical),
     /// Vector of physical values.
     PhysicalVec(Vec<Physical>),
+    /// Vector of boolean values.
+    BooleanVec(Vec<BooleanVal>),
+    /// Vector of bit values.
+    BitVec(Vec<BitVal>),
     /// Unknown or unsupported value kind.
     Unknown,
 }
@@ -83,6 +177,27 @@ impl fmt::Display for Value {
             Value::Logic(n) => write!(f, "{n}"),
             Value::LogicVec(v) => {
                 write!(f, "{v}")
+            }
+            Value::BooleanVec(v) => {
+                write!(
+                    f,
+                    "[{}]",
+                    v.iter()
+                        .map(std::string::ToString::to_string)
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )?;
+                Ok(())
+            }
+            Value::BitVec(v) => {
+                write!(
+                    f,
+                    "{}",
+                    v.iter()
+                        .map(std::string::ToString::to_string)
+                        .collect::<Vec<_>>()
+                        .join("")
+                )
             }
             Value::SmallEnum(n) => write!(f, "{n}"),
             Value::SmallEnumVec(v) => {
@@ -559,7 +674,27 @@ impl Handle {
             vhpi_sys::vhpiFormatT_vhpiLogicVecVal => {
                 let slice =
                     unsafe { std::slice::from_raw_parts(val.value.enumvs, val.numElems as usize) };
-                Ok(LogicVec::from_slice(slice).as_value())
+                if matches!(format, Format::ObjType) {
+                    match native_vector_kind(self) {
+                        NativeVectorKind::Bit => {
+                            if let Some(value) = bit_vec_from_slice(slice) {
+                                Ok(value)
+                            } else {
+                                Ok(LogicVec::from_slice(slice).as_value())
+                            }
+                        }
+                        NativeVectorKind::Boolean => {
+                            if let Some(value) = boolean_vec_from_enum_slice(slice) {
+                                Ok(value)
+                            } else {
+                                Ok(LogicVec::from_slice(slice).as_value())
+                            }
+                        }
+                        NativeVectorKind::Logic => Ok(LogicVec::from_slice(slice).as_value()),
+                    }
+                } else {
+                    Ok(LogicVec::from_slice(slice).as_value())
+                }
             }
             vhpi_sys::vhpiFormatT_vhpiRealVecVal => {
                 let slice = unsafe {
@@ -591,7 +726,14 @@ impl Handle {
                         val.numElems as usize,
                     )
                 };
-                Ok(Value::SmallEnumVec(slice.to_vec()))
+                if matches!(format, Format::ObjType)
+                    && matches!(native_vector_kind(self), NativeVectorKind::Boolean)
+                {
+                    Ok(boolean_vec_from_small_enum_slice(slice)
+                        .unwrap_or_else(|| Value::SmallEnumVec(slice.to_vec())))
+                } else {
+                    Ok(Value::SmallEnumVec(slice.to_vec()))
+                }
             }
             vhpi_sys::vhpiFormatT_vhpiEnumVecVal => {
                 let slice = unsafe {
@@ -600,7 +742,17 @@ impl Handle {
                         val.numElems as usize,
                     )
                 };
-                Ok(Value::EnumVec(slice.to_vec()))
+                if matches!(format, Format::ObjType) {
+                    match native_vector_kind(self) {
+                        NativeVectorKind::Bit => Ok(bit_vec_from_slice(slice)
+                            .unwrap_or_else(|| Value::EnumVec(slice.to_vec()))),
+                        NativeVectorKind::Boolean => Ok(boolean_vec_from_enum_slice(slice)
+                            .unwrap_or_else(|| Value::EnumVec(slice.to_vec()))),
+                        NativeVectorKind::Logic => Ok(Value::EnumVec(slice.to_vec())),
+                    }
+                } else {
+                    Ok(Value::EnumVec(slice.to_vec()))
+                }
             }
             vhpi_sys::vhpiFormatT_vhpiSmallPhysVal => {
                 Ok(Value::SmallPhysical(unsafe { val.value.smallphys }))
@@ -709,6 +861,16 @@ impl Handle {
                     vhpi_sys::vhpiValueS__bindgen_ty_1 { enumvs: ptr },
                 )
             }
+            Value::BitVec(vec) => {
+                let mut buffer: Vec<vhpi_sys::vhpiEnumT> =
+                    vec.iter().map(|&val| val.into()).collect();
+                let ptr = buffer.as_mut_ptr();
+                buffer_holder = Some(VectorBox::Enum(buffer));
+                (
+                    Format::LogicVec,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { enumvs: ptr },
+                )
+            }
             Value::IntVec(vec) => {
                 let mut buffer: Vec<vhpi_sys::vhpiIntT> = vec.clone();
                 let ptr = buffer.as_mut_ptr();
@@ -748,6 +910,16 @@ impl Handle {
             ),
             Value::SmallEnumVec(v) => {
                 let mut buffer: Vec<vhpi_sys::vhpiSmallEnumT> = v.clone();
+                let ptr = buffer.as_mut_ptr();
+                buffer_holder = Some(VectorBox::SmallEnum(buffer));
+                (
+                    Format::SmallEnumVec,
+                    vhpi_sys::vhpiValueS__bindgen_ty_1 { smallenumvs: ptr },
+                )
+            }
+            Value::BooleanVec(v) => {
+                let mut buffer: Vec<vhpi_sys::vhpiSmallEnumT> =
+                    v.iter().map(|&val| val.into()).collect();
                 let ptr = buffer.as_mut_ptr();
                 buffer_holder = Some(VectorBox::SmallEnum(buffer));
                 (
@@ -1084,6 +1256,22 @@ mod tests {
         assert_eq!(
             LogicVec::from_uint(0b110u8, 3),
             LogicVec::new(vec![LogicVal::One, LogicVal::One, LogicVal::Zero])
+        );
+    }
+
+    #[test]
+    fn bit_vec_display_converts_to_bit_string() {
+        assert_eq!(
+            Value::BitVec(vec![BitVal::One, BitVal::Zero, BitVal::One]).to_string(),
+            "101"
+        );
+    }
+
+    #[test]
+    fn boolean_vec_display_converts_to_literal_list() {
+        assert_eq!(
+            Value::BooleanVec(vec![BooleanVal::False, BooleanVal::True]).to_string(),
+            "[false, true]"
         );
     }
 }

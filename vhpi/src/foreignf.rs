@@ -211,6 +211,8 @@ impl ForeignExecData {
     /// - `Value::Char`
     /// - `Value::Logic`
     /// - `Value::LogicVec`
+    /// - `Value::BitVec`
+    /// - `Value::BooleanVec`
     ///
     /// # Errors
     ///
@@ -323,6 +325,97 @@ impl ForeignExecData {
                     *dst = <vhpi_sys::vhpiEnumT as From<LogicVal>>::from(*src);
                 }
                 Ok(())
+            }
+            Value::BitVec(values) => {
+                if !matches!(format, Format::LogicVec | Format::EnumVec | Format::ObjType) {
+                    return Err(format!(
+                        "foreignf: return-value format mismatch for BitVec: got {format:?}"
+                    )
+                    .as_str()
+                    .into());
+                }
+
+                if raw.numElems < 0 {
+                    return Err("foreignf: simulator reported negative return vector length".into());
+                }
+
+                let expected_len = raw.numElems as usize;
+                if expected_len != values.len() {
+                    return Err(format!(
+                        "foreignf: return vector length mismatch: simulator expects {}, got {}",
+                        expected_len,
+                        values.len()
+                    )
+                    .as_str()
+                    .into());
+                }
+
+                let out_ptr = unsafe { raw.value.enumvs };
+                if out_ptr.is_null() {
+                    return Err(
+                        "foreignf: simulator provided null return vector buffer pointer".into(),
+                    );
+                }
+
+                let out = unsafe { std::slice::from_raw_parts_mut(out_ptr, expected_len) };
+                for (dst, src) in out.iter_mut().zip(values.iter()) {
+                    *dst = (*src).into();
+                }
+                Ok(())
+            }
+            Value::BooleanVec(values) => {
+                if raw.numElems < 0 {
+                    return Err("foreignf: simulator reported negative return vector length".into());
+                }
+
+                let expected_len = raw.numElems as usize;
+                if expected_len != values.len() {
+                    return Err(format!(
+                        "foreignf: return vector length mismatch: simulator expects {}, got {}",
+                        expected_len,
+                        values.len()
+                    )
+                    .as_str()
+                    .into());
+                }
+
+                match format {
+                    Format::SmallEnumVec | Format::ObjType => {
+                        let out_ptr = unsafe { raw.value.smallenumvs };
+                        if out_ptr.is_null() {
+                            return Err(
+                                "foreignf: simulator provided null return vector buffer pointer"
+                                    .into(),
+                            );
+                        }
+
+                        let out = unsafe { std::slice::from_raw_parts_mut(out_ptr, expected_len) };
+                        for (dst, src) in out.iter_mut().zip(values.iter()) {
+                            *dst = (*src).into();
+                        }
+                        Ok(())
+                    }
+                    Format::EnumVec => {
+                        let out_ptr = unsafe { raw.value.enumvs };
+                        if out_ptr.is_null() {
+                            return Err(
+                                "foreignf: simulator provided null return vector buffer pointer"
+                                    .into(),
+                            );
+                        }
+
+                        let out = unsafe { std::slice::from_raw_parts_mut(out_ptr, expected_len) };
+                        for (dst, src) in out.iter_mut().zip(values.iter()) {
+                            *dst = (*src).into();
+                        }
+                        Ok(())
+                    }
+                    other => Err(format!(
+                        "foreignf: return-value format mismatch for BooleanVec: got {other:?}"
+                    )
+                    .as_str()
+                    .into()),
+                }
             }
             other => Err(format!(
                 "foreignf: unsupported return-value kind for direct buffer write: {other:?}"

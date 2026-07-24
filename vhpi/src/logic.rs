@@ -12,6 +12,17 @@ pub enum BitVal {
     One = vhpi_sys::vhpibit1 as u32,
 }
 
+impl BitVal {
+    #[must_use]
+    pub(crate) fn from_raw(raw: u32) -> Option<Self> {
+        match raw {
+            vhpi_sys::vhpibit0 => Some(Self::Zero),
+            vhpi_sys::vhpibit1 => Some(Self::One),
+            _ => None,
+        }
+    }
+}
+
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BooleanVal {
@@ -19,6 +30,70 @@ pub enum BooleanVal {
     False = vhpi_sys::vhpiFalse as u32,
     /// Logic true.
     True = vhpi_sys::vhpiTrue as u32,
+}
+
+impl BooleanVal {
+    #[must_use]
+    pub(crate) fn from_raw(raw: u32) -> Option<Self> {
+        match raw {
+            vhpi_sys::vhpiFalse => Some(Self::False),
+            vhpi_sys::vhpiTrue => Some(Self::True),
+            _ => None,
+        }
+    }
+}
+
+impl From<BitVal> for vhpi_sys::vhpiEnumT {
+    fn from(bit: BitVal) -> Self {
+        match bit {
+            BitVal::Zero => vhpi_sys::vhpibit0,
+            BitVal::One => vhpi_sys::vhpibit1,
+        }
+    }
+}
+
+impl From<BooleanVal> for vhpi_sys::vhpiSmallEnumT {
+    fn from(value: BooleanVal) -> Self {
+        match value {
+            BooleanVal::False => vhpi_sys::vhpiFalse as vhpi_sys::vhpiSmallEnumT,
+            BooleanVal::True => vhpi_sys::vhpiTrue as vhpi_sys::vhpiSmallEnumT,
+        }
+    }
+}
+
+impl From<BooleanVal> for vhpi_sys::vhpiEnumT {
+    fn from(value: BooleanVal) -> Self {
+        match value {
+            BooleanVal::False => vhpi_sys::vhpiFalse,
+            BooleanVal::True => vhpi_sys::vhpiTrue,
+        }
+    }
+}
+
+impl fmt::Display for BitVal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                BitVal::Zero => '0',
+                BitVal::One => '1',
+            }
+        )
+    }
+}
+
+impl fmt::Display for BooleanVal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                BooleanVal::False => "false",
+                BooleanVal::True => "true",
+            }
+        )
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -231,7 +306,11 @@ impl LogicVec {
 
     /// Returns a vector of bytes representing the VCD value of this `LogicVec`.
     pub fn as_vcd_value(&self) -> Vec<u8> {
-        let mut vcd_value = self.data.iter().map(|val| u8::from(*val)).collect::<Vec<u8>>();
+        let mut vcd_value = self
+            .data
+            .iter()
+            .map(|val| u8::from(*val))
+            .collect::<Vec<u8>>();
         // Remove leading x from the VCD value representation, but keep the last x.
         while vcd_value.first() == Some(&b'x') && vcd_value.len() > 1 {
             if vcd_value.iter().nth(1) == Some(&b'x') {
@@ -249,7 +328,7 @@ impl LogicVec {
         }
         // Remove leading zeros from the VCD value representation.
         while vcd_value.first() == Some(&b'0') && vcd_value.len() > 1 {
-             vcd_value.remove(0);
+            vcd_value.remove(0);
         }
 
         vcd_value
