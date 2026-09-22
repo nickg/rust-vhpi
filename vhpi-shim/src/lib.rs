@@ -44,6 +44,9 @@ macro_rules! define_vhpi_forwarders {
         type VhpiGetTimeFn = unsafe extern "C" fn(*mut VhpiTimeS, *mut std::ffi::c_long);
         type VhpiGetNextTimeFn = unsafe extern "C" fn(*mut VhpiTimeS) -> std::ffi::c_int;
         type VhpiControlFn = unsafe extern "C" fn(std::ffi::c_int) -> std::ffi::c_int;
+        #[cfg(target_os = "macos")]
+        type VhpiPrintfFn = unsafe extern "C" fn(*const std::ffi::c_char, ...) -> std::ffi::c_int;
+        #[cfg(not(target_os = "macos"))]
         type VhpiPrintfFn = unsafe extern "C" fn(
             *const std::ffi::c_char,
             *const std::ffi::c_char,
