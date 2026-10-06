@@ -3,7 +3,6 @@
 use crate::{check_error, Error, Handle, Time};
 use num_derive::{FromPrimitive, ToPrimitive};
 use std::mem::ManuallyDrop;
-use vhpi_sys::{vhpiCbDataS, vhpi_register_cb};
 
 bitflags::bitflags! {
     /// Bitmask of callback flags.
@@ -132,9 +131,9 @@ pub struct CbData {
 
 impl CbData {
     #[inline]
-    unsafe fn from_raw(raw: *const vhpiCbDataS) -> Self {
+    unsafe fn from_raw(raw: *const vhpi_sys::vhpiCbDataS) -> Self {
         Self {
-            // vhpiCbDataS::obj is the callback trigger object handle.
+            // vhpi_sys::vhpiCbDataS::obj is the callback trigger object handle.
             // Keep it borrowed by avoiding Drop with ManuallyDrop.
             obj: ManuallyDrop::new(unsafe { Handle::from_raw((*raw).obj) }),
         }
@@ -255,7 +254,7 @@ where
     let boxed: Box<F> = Box::new(callback);
     let user_data = Box::into_raw(boxed).cast::<std::os::raw::c_void>();
 
-    let mut cb_data = vhpiCbDataS {
+    let mut cb_data = vhpi_sys::vhpiCbDataS {
         reason: reason as i32,
         cb_rtn: Some(trampoline::<F>),
         obj: std::ptr::null_mut(),
@@ -263,7 +262,7 @@ where
         value: std::ptr::null_mut(),
         user_data,
     };
-    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, CallbackFlag::Return.bits()) };
+    let ret = unsafe { vhpi_sys::vhpi_register_cb(&raw mut cb_data, CallbackFlag::Return.bits()) };
     match check_error() {
         Some(err) => {
             unsafe {
@@ -294,7 +293,7 @@ where
         time: delay.into(),
     });
     let user_data = Box::into_raw(boxed);
-    let mut cb_data = vhpiCbDataS {
+    let mut cb_data = vhpi_sys::vhpiCbDataS {
         reason: CbReason::AfterDelay as i32,
         cb_rtn: Some(after_delay_trampoline::<F>),
         obj: std::ptr::null_mut(),
@@ -302,7 +301,7 @@ where
         value: std::ptr::null_mut(),
         user_data: user_data.cast::<std::os::raw::c_void>(),
     };
-    let ret = unsafe { vhpi_register_cb(&raw mut cb_data, CallbackFlag::Return.bits()) };
+    let ret = unsafe { vhpi_sys::vhpi_register_cb(&raw mut cb_data, CallbackFlag::Return.bits()) };
     match check_error() {
         Some(err) => {
             unsafe {
@@ -398,7 +397,7 @@ impl Handle {
         let boxed: Box<F> = Box::new(callback);
         let user_data = Box::into_raw(boxed).cast::<std::os::raw::c_void>();
 
-        let mut cb_data = vhpiCbDataS {
+        let mut cb_data = vhpi_sys::vhpiCbDataS {
             reason: reason as i32,
             cb_rtn: Some(trampoline::<F>),
             obj: self.as_raw(),
@@ -406,7 +405,8 @@ impl Handle {
             value: std::ptr::null_mut(),
             user_data,
         };
-        let ret = unsafe { vhpi_register_cb(&raw mut cb_data, CallbackFlag::Return.bits()) };
+        let ret =
+            unsafe { vhpi_sys::vhpi_register_cb(&raw mut cb_data, CallbackFlag::Return.bits()) };
         match check_error() {
             Some(err) => {
                 unsafe {
