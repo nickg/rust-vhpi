@@ -35,7 +35,7 @@ Add `vhpi` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-vhpi = "0.5.0"
+vhpi = "0.6.0"
 ```
 
 VHPI programs are usually compiled as plugins and loaded into the
@@ -50,7 +50,7 @@ If you get linker errors on Windows and macOS because you are trying to build a 
 
 ```toml
 [dependencies]
-vhpi = { version = "0.5.0", features = ["dynamic"] }
+vhpi = { version = "0.6.0", features = ["dynamic"] }
 ```
 
 or, if you have nvc installed, link with `$PREFIX/lib/nvc/libnvcimp.a`.
