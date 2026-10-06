@@ -131,7 +131,8 @@ impl ForeignExecData {
     /// written.
     #[must_use]
     pub fn obj(&self) -> ManuallyDrop<Handle> {
-        ManuallyDrop::new(Handle::from_raw(self.0.obj))
+        // SAFETY: The callback object is borrowed; ManuallyDrop prevents release.
+        ManuallyDrop::new(unsafe { Handle::from_raw(self.0.obj) })
     }
 
     /// Raw callback reason code as provided by the simulator.
@@ -436,7 +437,8 @@ pub fn register_foreignf(data: &ForeignData) -> Result<Handle, Error> {
     if handle.is_null() {
         Err(check_error().unwrap_or_else(|| "vhpi_register_foreignf failed".into()))
     } else {
-        Ok(Handle::from_raw(handle))
+        // SAFETY: VHPI returns a foreign model handle owned by the caller.
+        Ok(unsafe { Handle::from_raw(handle) })
     }
 }
 

@@ -741,7 +741,7 @@ impl Handle {
                 self.as_raw(),
             )
         };
-        let handle = Handle::from_raw(unsafe { vhpi_scan(raw) });
+        let handle = unsafe { Handle::from_raw(vhpi_scan(raw)) };
         let is_up = handle.get(IntProperty::IsUp);
         let left = handle.get(IntProperty::LeftBound);
         let right = handle.get(IntProperty::RightBound);

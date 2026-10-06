@@ -302,7 +302,7 @@ pub enum OneToMany {
 /// Owned wrapper around a `vhpiHandleT`.
 ///
 /// A non-null handle is automatically released on drop.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Handle {
     handle: vhpiHandleT,
 }
@@ -365,14 +365,25 @@ impl Handle {
     ///
     /// The returned wrapper takes ownership and will release the handle on drop
     /// when it is non-null.
-    pub fn from_raw(raw: vhpiHandleT) -> Self {
+    ///
+    /// # Safety
+    ///
+    /// `raw` must be null or a valid VHPI handle. No other normally dropped
+    /// `Handle` may own the same non-null handle.
+    pub(crate) unsafe fn from_raw(raw: vhpiHandleT) -> Self {
         Self { handle: raw }
     }
 
     #[must_use]
     /// Look up a related object through a one-to-one relationship.
     pub fn handle(&self, property: OneToOne) -> Handle {
-        Handle::from_raw(unsafe { vhpi_handle(property as vhpi_sys::vhpiOneToOneT, self.as_raw()) })
+        // SAFETY: VHPI returns a handle owned by the caller.
+        unsafe {
+            Handle::from_raw(vhpi_handle(
+                property as vhpi_sys::vhpiOneToOneT,
+                self.as_raw(),
+            ))
+        }
     }
 
     #[must_use]
@@ -385,7 +396,8 @@ impl Handle {
         if handle.is_null() {
             None
         } else {
-            Some(Handle::from_raw(handle))
+            // SAFETY: VHPI returns a handle owned by the caller.
+            Some(unsafe { Handle::from_raw(handle) })
         }
     }
 
@@ -401,7 +413,8 @@ impl Handle {
         if handle.is_null() {
             None
         } else {
-            Some(Handle::from_raw(handle))
+            // SAFETY: VHPI returns a handle owned by the caller.
+            Some(unsafe { Handle::from_raw(handle) })
         }
     }
 
@@ -413,7 +426,8 @@ impl Handle {
     pub fn iterator(&self, typ: OneToMany) -> HandleIterator {
         let raw = unsafe { vhpi_iterator(typ as vhpi_sys::vhpiOneToManyT, self.as_raw()) };
         HandleIterator {
-            iter: Handle::from_raw(raw),
+            // SAFETY: VHPI returns an iterator handle owned by the caller.
+            iter: unsafe { Handle::from_raw(raw) },
         }
     }
 }
@@ -426,7 +440,8 @@ impl Iterator for HandleIterator {
             return None;
         }
 
-        let next = Handle::from_raw(unsafe { vhpi_scan(self.iter.as_raw()) });
+        // SAFETY: vhpi_scan returns a handle owned by the caller.
+        let next = unsafe { Handle::from_raw(vhpi_scan(self.iter.as_raw())) };
 
         if next.is_null() {
             // The handle is automatically released when the iterator is exhausted
@@ -441,9 +456,13 @@ impl Iterator for HandleIterator {
 #[must_use]
 /// Look up a top-level object through a one-to-one relationship.
 pub fn handle(property: OneToOne) -> Handle {
-    Handle::from_raw(unsafe {
-        vhpi_handle(property as vhpi_sys::vhpiOneToOneT, std::ptr::null_mut())
-    })
+    // SAFETY: VHPI returns a handle owned by the caller.
+    unsafe {
+        Handle::from_raw(vhpi_handle(
+            property as vhpi_sys::vhpiOneToOneT,
+            std::ptr::null_mut(),
+        ))
+    }
 }
 
 #[must_use]
@@ -456,6 +475,7 @@ pub fn handle_by_name(name: &str) -> Option<Handle> {
     if handle.is_null() {
         None
     } else {
-        Some(Handle::from_raw(handle))
+        // SAFETY: VHPI returns a handle owned by the caller.
+        Some(unsafe { Handle::from_raw(handle) })
     }
 }
