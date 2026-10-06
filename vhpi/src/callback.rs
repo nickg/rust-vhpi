@@ -136,7 +136,7 @@ impl CbData {
         Self {
             // vhpiCbDataS::obj is the callback trigger object handle.
             // Keep it borrowed by avoiding Drop with ManuallyDrop.
-            obj: ManuallyDrop::new(Handle::from_raw((*raw).obj)),
+            obj: ManuallyDrop::new(unsafe { Handle::from_raw((*raw).obj) }),
         }
     }
 
@@ -149,7 +149,7 @@ impl CbData {
 
 /// Information about a registered callback returned by [`get_cb_info`] and
 /// [`Handle::get_cb_info`].
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct CbInfo {
     /// Raw callback reason as returned by the simulator. Compare against
     /// [`CbReason`] discriminant values to identify the reason.
@@ -161,6 +161,18 @@ pub struct CbInfo {
     obj: ManuallyDrop<Handle>,
     /// The scheduled simulation time for time-based callbacks.
     pub time: Option<Time>,
+}
+
+impl Clone for CbInfo {
+    fn clone(&self) -> Self {
+        Self {
+            reason: self.reason.clone(),
+            // SAFETY: This callback object is borrowed, and ManuallyDrop
+            // prevents the wrapper from releasing it.
+            obj: ManuallyDrop::new(unsafe { Handle::from_raw(self.obj().as_raw()) }),
+            time: self.time.clone(),
+        }
+    }
 }
 
 impl CbInfo {
@@ -259,7 +271,8 @@ where
             }
             Err(RegisterCbError::Error(err))
         }
-        None => Ok(Handle::from_raw(ret)),
+        // SAFETY: VHPI returns a callback handle owned by the caller.
+        None => Ok(unsafe { Handle::from_raw(ret) }),
     }
 }
 
@@ -297,7 +310,8 @@ where
             }
             Err(RegisterCbError::Error(err))
         }
-        None => Ok(Handle::from_raw(ret)),
+        // SAFETY: VHPI returns a callback handle owned by the caller.
+        None => Ok(unsafe { Handle::from_raw(ret) }),
     }
 }
 
@@ -364,7 +378,8 @@ pub fn get_cb_info(handle: &Handle) -> Result<CbInfo, Error> {
     };
     Ok(CbInfo {
         reason: CbReason::from_u32(raw.reason as u32),
-        obj: ManuallyDrop::new(Handle::from_raw(raw.obj)),
+        // SAFETY: The callback object is borrowed; ManuallyDrop prevents release.
+        obj: ManuallyDrop::new(unsafe { Handle::from_raw(raw.obj) }),
         time,
     })
 }
@@ -399,7 +414,8 @@ impl Handle {
                 }
                 Err(RegisterCbError::Error(err))
             }
-            None => Ok(Handle::from_raw(ret)),
+            // SAFETY: VHPI returns a callback handle owned by the caller.
+            None => Ok(unsafe { Handle::from_raw(ret) }),
         }
     }
 
